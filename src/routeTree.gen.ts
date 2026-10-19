@@ -9,72 +9,36 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ShareControlRouteImport } from './routes/share-control'
-import { Route as PulseRouteImport } from './routes/pulse'
-import { Route as PlannerRouteImport } from './routes/planner'
-import { Route as MapRouteImport } from './routes/map'
-import { Route as HowItWorksRouteImport } from './routes/how-it-works'
-import { Route as DiscoverRouteImport } from './routes/discover'
-import { Route as CommunitiesRouteImport } from './routes/communities'
-import { Route as CommitmentClockRouteImport } from './routes/commitment-clock'
-import { Route as BrowseRouteImport } from './routes/browse'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ListingsIdRouteImport } from './routes/listings.$id'
-import { Route as CategorySlugRouteImport } from './routes/category.$slug'
-import { Route as AuthenticatedVerifyRouteImport } from './routes/_authenticated/verify'
-import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
-import { Route as AuthenticatedNewRouteImport } from './routes/_authenticated/new'
-import { Route as AuthenticatedMyRouteImport } from './routes/_authenticated/my'
-import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as BrowseRouteImport } from './routes/browse'
+import { Route as CommitmentClockRouteImport } from './routes/commitment-clock'
+import { Route as CommunitiesRouteImport } from './routes/communities'
+import { Route as DiscoverRouteImport } from './routes/discover'
+import { Route as HowItWorksRouteImport } from './routes/how-it-works'
+import { Route as MapRouteImport } from './routes/map'
+import { Route as PlannerRouteImport } from './routes/planner'
+import { Route as PulseRouteImport } from './routes/pulse'
+import { Route as ShareControlRouteImport } from './routes/share-control'
 import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticated/activity'
-import { Route as AuthenticatedMessagesIdRouteImport } from './routes/_authenticated/messages.$id'
+import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
+import { Route as AuthenticatedMyRouteImport } from './routes/_authenticated/my'
+import { Route as AuthenticatedNewRouteImport } from './routes/_authenticated/new'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedVerifyRouteImport } from './routes/_authenticated/verify'
+import { Route as CategorySlugRouteImport } from './routes/category.$slug'
+import { Route as ListingsIdRouteImport } from './routes/listings.$id'
 import { Route as AuthenticatedCommunitiesIdRouteImport } from './routes/_authenticated/communities.$id'
+import { Route as AuthenticatedMessagesIdRouteImport } from './routes/_authenticated/messages.$id'
 
-const ShareControlRoute = ShareControlRouteImport.update({
-  id: '/share-control',
-  path: '/share-control',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PulseRoute = PulseRouteImport.update({
-  id: '/pulse',
-  path: '/pulse',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PlannerRoute = PlannerRouteImport.update({
-  id: '/planner',
-  path: '/planner',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MapRoute = MapRouteImport.update({
-  id: '/map',
-  path: '/map',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HowItWorksRoute = HowItWorksRouteImport.update({
-  id: '/how-it-works',
-  path: '/how-it-works',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DiscoverRoute = DiscoverRouteImport.update({
-  id: '/discover',
-  path: '/discover',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CommunitiesRoute = CommunitiesRouteImport.update({
-  id: '/communities',
-  path: '/communities',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CommitmentClockRoute = CommitmentClockRouteImport.update({
-  id: '/commitment-clock',
-  path: '/commitment-clock',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BrowseRoute = BrowseRouteImport.update({
-  id: '/browse',
-  path: '/browse',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -82,43 +46,54 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const BrowseRoute = BrowseRouteImport.update({
+  id: '/browse',
+  path: '/browse',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const CommitmentClockRoute = CommitmentClockRouteImport.update({
+  id: '/commitment-clock',
+  path: '/commitment-clock',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ListingsIdRoute = ListingsIdRouteImport.update({
-  id: '/listings/$id',
-  path: '/listings/$id',
+const CommunitiesRoute = CommunitiesRouteImport.update({
+  id: '/communities',
+  path: '/communities',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CategorySlugRoute = CategorySlugRouteImport.update({
-  id: '/category/$slug',
-  path: '/category/$slug',
+const DiscoverRoute = DiscoverRouteImport.update({
+  id: '/discover',
+  path: '/discover',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedVerifyRoute = AuthenticatedVerifyRouteImport.update({
-  id: '/verify',
-  path: '/verify',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const HowItWorksRoute = HowItWorksRouteImport.update({
+  id: '/how-it-works',
+  path: '/how-it-works',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const MapRoute = MapRouteImport.update({
+  id: '/map',
+  path: '/map',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedNewRoute = AuthenticatedNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const PlannerRoute = PlannerRouteImport.update({
+  id: '/planner',
+  path: '/planner',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedMyRoute = AuthenticatedMyRouteImport.update({
-  id: '/my',
-  path: '/my',
+const PulseRoute = PulseRouteImport.update({
+  id: '/pulse',
+  path: '/pulse',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShareControlRoute = ShareControlRouteImport.update({
+  id: '/share-control',
+  path: '/share-control',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedActivityRoute = AuthenticatedActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMessagesRoute = AuthenticatedMessagesRouteImport.update({
@@ -126,15 +101,35 @@ const AuthenticatedMessagesRoute = AuthenticatedMessagesRouteImport.update({
   path: '/messages',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedActivityRoute = AuthenticatedActivityRouteImport.update({
-  id: '/activity',
-  path: '/activity',
+const AuthenticatedMyRoute = AuthenticatedMyRouteImport.update({
+  id: '/my',
+  path: '/my',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedMessagesIdRoute = AuthenticatedMessagesIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AuthenticatedMessagesRoute,
+const AuthenticatedNewRoute = AuthenticatedNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedVerifyRoute = AuthenticatedVerifyRouteImport.update({
+  id: '/verify',
+  path: '/verify',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const CategorySlugRoute = CategorySlugRouteImport.update({
+  id: '/category/$slug',
+  path: '/category/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ListingsIdRoute = ListingsIdRouteImport.update({
+  id: '/listings/$id',
+  path: '/listings/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedCommunitiesIdRoute =
   AuthenticatedCommunitiesIdRouteImport.update({
@@ -142,6 +137,11 @@ const AuthenticatedCommunitiesIdRoute =
     path: '/communities/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMessagesIdRoute = AuthenticatedMessagesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedMessagesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -306,74 +306,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/share-control': {
-      id: '/share-control'
-      path: '/share-control'
-      fullPath: '/share-control'
-      preLoaderRoute: typeof ShareControlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pulse': {
-      id: '/pulse'
-      path: '/pulse'
-      fullPath: '/pulse'
-      preLoaderRoute: typeof PulseRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/planner': {
-      id: '/planner'
-      path: '/planner'
-      fullPath: '/planner'
-      preLoaderRoute: typeof PlannerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/map': {
-      id: '/map'
-      path: '/map'
-      fullPath: '/map'
-      preLoaderRoute: typeof MapRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/how-it-works': {
-      id: '/how-it-works'
-      path: '/how-it-works'
-      fullPath: '/how-it-works'
-      preLoaderRoute: typeof HowItWorksRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/discover': {
-      id: '/discover'
-      path: '/discover'
-      fullPath: '/discover'
-      preLoaderRoute: typeof DiscoverRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/communities': {
-      id: '/communities'
-      path: '/communities'
-      fullPath: '/communities'
-      preLoaderRoute: typeof CommunitiesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/commitment-clock': {
-      id: '/commitment-clock'
-      path: '/commitment-clock'
-      fullPath: '/commitment-clock'
-      preLoaderRoute: typeof CommitmentClockRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/browse': {
-      id: '/browse'
-      path: '/browse'
-      fullPath: '/browse'
-      preLoaderRoute: typeof BrowseRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -383,53 +320,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/listings/$id': {
-      id: '/listings/$id'
-      path: '/listings/$id'
-      fullPath: '/listings/$id'
-      preLoaderRoute: typeof ListingsIdRouteImport
+    '/browse': {
+      id: '/browse'
+      path: '/browse'
+      fullPath: '/browse'
+      preLoaderRoute: typeof BrowseRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/category/$slug': {
-      id: '/category/$slug'
-      path: '/category/$slug'
-      fullPath: '/category/$slug'
-      preLoaderRoute: typeof CategorySlugRouteImport
+    '/commitment-clock': {
+      id: '/commitment-clock'
+      path: '/commitment-clock'
+      fullPath: '/commitment-clock'
+      preLoaderRoute: typeof CommitmentClockRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/verify': {
-      id: '/_authenticated/verify'
-      path: '/verify'
-      fullPath: '/verify'
-      preLoaderRoute: typeof AuthenticatedVerifyRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/communities': {
+      id: '/communities'
+      path: '/communities'
+      fullPath: '/communities'
+      preLoaderRoute: typeof CommunitiesRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/profile': {
-      id: '/_authenticated/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof AuthenticatedProfileRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/discover': {
+      id: '/discover'
+      path: '/discover'
+      fullPath: '/discover'
+      preLoaderRoute: typeof DiscoverRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/new': {
-      id: '/_authenticated/new'
-      path: '/new'
-      fullPath: '/new'
-      preLoaderRoute: typeof AuthenticatedNewRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/how-it-works': {
+      id: '/how-it-works'
+      path: '/how-it-works'
+      fullPath: '/how-it-works'
+      preLoaderRoute: typeof HowItWorksRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/my': {
-      id: '/_authenticated/my'
-      path: '/my'
-      fullPath: '/my'
-      preLoaderRoute: typeof AuthenticatedMyRouteImport
+    '/map': {
+      id: '/map'
+      path: '/map'
+      fullPath: '/map'
+      preLoaderRoute: typeof MapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/planner': {
+      id: '/planner'
+      path: '/planner'
+      fullPath: '/planner'
+      preLoaderRoute: typeof PlannerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pulse': {
+      id: '/pulse'
+      path: '/pulse'
+      fullPath: '/pulse'
+      preLoaderRoute: typeof PulseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/share-control': {
+      id: '/share-control'
+      path: '/share-control'
+      fullPath: '/share-control'
+      preLoaderRoute: typeof ShareControlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/activity': {
+      id: '/_authenticated/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof AuthenticatedActivityRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/messages': {
@@ -439,11 +404,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMessagesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/activity': {
-      id: '/_authenticated/activity'
-      path: '/activity'
-      fullPath: '/activity'
-      preLoaderRoute: typeof AuthenticatedActivityRouteImport
+    '/_authenticated/my': {
+      id: '/_authenticated/my'
+      path: '/my'
+      fullPath: '/my'
+      preLoaderRoute: typeof AuthenticatedMyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/new': {
+      id: '/_authenticated/new'
+      path: '/new'
+      fullPath: '/new'
+      preLoaderRoute: typeof AuthenticatedNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/verify': {
+      id: '/_authenticated/verify'
+      path: '/verify'
+      fullPath: '/verify'
+      preLoaderRoute: typeof AuthenticatedVerifyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/category/$slug': {
+      id: '/category/$slug'
+      path: '/category/$slug'
+      fullPath: '/category/$slug'
+      preLoaderRoute: typeof CategorySlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/listings/$id': {
+      id: '/listings/$id'
+      path: '/listings/$id'
+      fullPath: '/listings/$id'
+      preLoaderRoute: typeof ListingsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/communities/$id': {
+      id: '/_authenticated/communities/$id'
+      path: '/communities/$id'
+      fullPath: '/communities/$id'
+      preLoaderRoute: typeof AuthenticatedCommunitiesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/messages/$id': {
@@ -452,13 +459,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/messages/$id'
       preLoaderRoute: typeof AuthenticatedMessagesIdRouteImport
       parentRoute: typeof AuthenticatedMessagesRoute
-    }
-    '/_authenticated/communities/$id': {
-      id: '/_authenticated/communities/$id'
-      path: '/communities/$id'
-      fullPath: '/communities/$id'
-      preLoaderRoute: typeof AuthenticatedCommunitiesIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
