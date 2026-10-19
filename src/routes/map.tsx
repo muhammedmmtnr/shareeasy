@@ -1,18 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowUpRight,
-  Bell,
   Compass,
+  LocateFixed,
   MapPin,
-  Menu,
   Search,
   SlidersHorizontal,
   Sparkles,
   Users,
 } from "lucide-react";
+import Map, { GeolocateControl, Marker, NavigationControl, Popup } from "react-map-gl/maplibre";
+import * as maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { Button } from "@/components/ui/button";
+import { CATEGORIES } from "@/lib/categories";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/map")({
@@ -33,216 +36,619 @@ export const Route = createFileRoute("/map")({
   component: MapPage,
 });
 
+type MapListing = {
+  id: string;
+  title: string;
+  description: string | null;
+  location: string | null;
+  category: string | null;
+  status: string | null;
+  starts_at: string | null;
+  total_cost: number | null;
+  cost_per_person: number | null;
+  capacity: number | null;
+  created_at: string | null;
+  coords?: [number, number] | null;
+};
+
+const DEFAULT_CENTER: [number, number] = [77.209, 28.6139];
+const SEARCH_CACHE = new Map<string, [number, number]>();
+
+function formatMoney(value: number | null) {
+  if (value == null || Number.isNaN(value)) return "Price on request";
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function getCategoryColor(category: string | null) {
+  const palette: Record<string, string> = {
+    mobility: "#f97316",
+    accommodation: "#ec4899",
+    food: "#f59e0b",
+    shopping: "#10b981",
+    travel: "#3b82f6",
+    tickets: "#ef4444",
+    software: "#8b5cf6",
+    equipment: "#facc15",
+    community: "#06b6d4",
+  };
+  return palette[category ?? "community"] ?? "#0f172a";
+}
+
+function getCategoryBadge(category: string | null) {
+  const entry = CATEGORIES.find((item) => item.slug === category);
+  return entry?.label ?? "Share";
+}
+
+function haversineKm(a: [number, number], b: [number, number]) {
+  const toRad = (value: number) => (value * Math.PI) / 180;
+  const dLat = toRad(b[1] - a[1]);
+  const dLng = toRad(b[0] - a[0]);
+  const lat1 = toRad(a[1]);
+  const lat2 = toRad(b[1]);
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * 6371 * Math.asin(Math.sqrt(h));
+}
+
+async function geocodeSingleLocation(query: string): Promise<[number, number] | null> {
+  if (!query || !query.trim()) return null;
+  const key = query.trim().toLowerCase();
+  if (SEARCH_CACHE.has(key)) return SEARCH_CACHE.get(key) ?? null;
+
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`,
+      {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "ShareCheyaApp/1.0",
+        },
+      },
+    );
+    const payload = (await response.json()) as Array<{ lat?: string; lon?: string }>;
+    const first = payload[0];
+    if (!first?.lat || !first?.lon) return null;
+    const coords: [number, number] = [Number(first.lon), Number(first.lat)];
+    SEARCH_CACHE.set(key, coords);
+    return coords;
+  } catch {
+    return null;
+  }
+}
+
+async function geocodeListings(listings: MapListing[]) {
+  return Promise.all(
+    listings.map(async (listing) => {
+      const query = listing.location?.trim();
+      if (!query) return { ...listing, coords: null };
+      const coords = await geocodeSingleLocation(query);
+      return { ...listing, coords };
+    }),
+  );
+}
+
 function MapPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedRadius, setSelectedRadius] = useState(25);
+  const [sortMode, setSortMode] = useState<"nearest" | "newest" | "price">("nearest");
+  const [userCoords, setUserCoords] = useState<[number, number] | null>(null);
+  const [userLocationMessage, setUserLocationMessage] = useState<string | null>(null);
+  const [viewState, setViewState] = useState({
+    longitude: DEFAULT_CENTER[0],
+    latitude: DEFAULT_CENTER[1],
+    zoom: 4.5,
+  });
 
-  const { data, isLoading } = useQuery({
+  const { data: listings = [], isLoading, error } = useQuery({
     queryKey: ["map-listings"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("listings")
-        .select("id,title,location,category,description,owner_id")
-        .not("location", "is", null)
+        .select(
+          "id,title,description,location,category,status,starts_at,total_cost,cost_per_person,capacity,created_at",
+        )
         .order("created_at", { ascending: false })
-        .limit(8);
+        .limit(50);
+
       if (error) throw error;
-      return data ?? [];
+      const baseListings = (data ?? []) as MapListing[];
+      return geocodeListings(baseListings);
     },
+    refetchInterval: 60000,
   });
 
-  const selected = data?.find((l) => l.id === selectedId) ?? data?.[0];
+  const filteredListings = useMemo(() => {
+    const normalizedSearch = query.trim().toLowerCase();
+    let next = listings.filter((listing) => {
+      const matchesCategory =
+        selectedCategory === "all" || (listing.category ?? "").toLowerCase() === selectedCategory;
+      const haystack = `${listing.title} ${listing.location ?? ""} ${listing.description ?? ""}`.toLowerCase();
+      const matchesSearch = !normalizedSearch || haystack.includes(normalizedSearch);
+      const matchesRadius =
+        !userCoords || !listing.coords || haversineKm(userCoords, listing.coords) <= selectedRadius;
+      return matchesCategory && matchesSearch && matchesRadius;
+    });
 
-  const floatingPins = [
-    { label: "Ben", x: "48%", y: "18%", color: "bg-[#27c0c2]" },
-    { label: "Kai", x: "66%", y: "32%", color: "bg-[#ff8c6b]" },
-    { label: "Chloe", x: "50%", y: "46%", color: "bg-[#48a0ff]" },
-    { label: "Mia", x: "60%", y: "67%", color: "bg-[#b873ff]" },
-    { label: "Ava", x: "76%", y: "54%", color: "bg-[#00b894]" },
-  ];
+    if (sortMode === "nearest" && userCoords) {
+      next = [...next].sort((a, b) => {
+        const aDistance = a.coords ? haversineKm(userCoords, a.coords) : Number.POSITIVE_INFINITY;
+        const bDistance = b.coords ? haversineKm(userCoords, b.coords) : Number.POSITIVE_INFINITY;
+        return aDistance - bDistance;
+      });
+    }
+
+    if (sortMode === "price") {
+      next = [...next].sort((a, b) => {
+        const aPrice = a.cost_per_person ?? a.total_cost ?? Number.POSITIVE_INFINITY;
+        const bPrice = b.cost_per_person ?? b.total_cost ?? Number.POSITIVE_INFINITY;
+        return aPrice - bPrice;
+      });
+    }
+
+    if (sortMode === "newest") {
+      next = [...next].sort((a, b) => {
+        const aDate = new Date(a.created_at ?? 0).getTime();
+        const bDate = new Date(b.created_at ?? 0).getTime();
+        return bDate - aDate;
+      });
+    }
+
+    return next.filter((listing) => listing.coords);
+  }, [listings, query, selectedCategory, selectedRadius, sortMode, userCoords]);
+
+  const selectedListing =
+    filteredListings.find((listing) => listing.id === selectedId) ?? filteredListings[0] ?? null;
+
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      setUserLocationMessage("Geolocation is not supported in this browser.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const nextCoords: [number, number] = [position.coords.longitude, position.coords.latitude];
+        setUserCoords(nextCoords);
+        setUserLocationMessage("Showing shares near your current location.");
+        setViewState({
+          longitude: nextCoords[0],
+          latitude: nextCoords[1],
+          zoom: 10,
+        });
+      },
+      () => {
+        setUserLocationMessage("Location access was denied. You can still browse by city or neighborhood.");
+      },
+      { enableHighAccuracy: true, timeout: 15000 },
+    );
+  };
+
+  const handleLocationSearch = async () => {
+    if (!query.trim()) return;
+    const coords = await geocodeSingleLocation(query.trim());
+    if (!coords) {
+      setUserLocationMessage("We couldn’t find that place yet. Try a broader city or neighborhood name.");
+      return;
+    }
+    setUserCoords(null);
+    setUserLocationMessage(`Showing matches around ${query.trim()}.`);
+    setViewState({ longitude: coords[0], latitude: coords[1], zoom: 10 });
+  };
+
+  const categoryOptions = [{ slug: "all", label: "All Shares" }, ...CATEGORIES.map((category) => ({ slug: category.slug, label: category.label }))];
 
   return (
-    <div className="min-h-screen bg-[#edf4fb] text-slate-900">
-      <div className="mx-auto max-w-[480px] bg-[#edf4fb] pb-28 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-        <div className="px-4 pt-3">
-          <div className="flex items-center justify-between pb-2 text-[11px] font-medium text-slate-600">
-            <span className="text-[13px] font-semibold">9:41 AM</span>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[12px]">◔</span>
-              <span className="text-[12px]">▣</span>
+    <div className="min-h-screen bg-[#edf5ff] text-slate-900">
+      <div className="mx-auto max-w-[1700px] px-4 py-5 lg:px-6">
+        <header className="rounded-[24px] border border-slate-200 bg-white/85 px-5 py-4 shadow-[0_18px_40px_rgba(15,23,42,0.05)] backdrop-blur-sm">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex items-center gap-3">
+              <Link to="/" className="flex items-center gap-3">
+                <img
+                  src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=160&q=80"
+                  alt="ShareCheya"
+                  className="h-12 w-12 rounded-full object-cover ring-2 ring-sky-100"
+                />
+                <div>
+                  <div className="text-[11px] uppercase tracking-[0.24em] text-slate-500">
+                    ShareCheya
+                  </div>
+                  <div className="text-xl font-black tracking-[-0.06em] text-slate-900">
+                    Map of shares
+                  </div>
+                </div>
+              </Link>
             </div>
-          </div>
-        </div>
 
-        <header className="px-4 pb-2 pt-1">
-          <div className="flex items-center justify-between">
-            <button className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200/80 bg-white/80 shadow-sm backdrop-blur">
-              <Menu className="h-5 w-5 text-slate-700" />
-            </button>
-            <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2 shadow-sm backdrop-blur">
-              <span className="text-[11px] font-medium text-slate-500">Top</span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[radial-gradient(circle_at_30%_30%,#ffe7b3,#d9a1ff_45%,#4e7cff_100%)] text-[10px] font-bold text-white shadow-md">
-                A
+            <div className="flex flex-1 flex-col gap-3 xl:max-w-[760px] xl:flex-row xl:items-center xl:justify-end">
+              <div className="flex flex-1 items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-4 py-2.5 shadow-inner shadow-slate-100">
+                <Search className="h-4 w-4 text-slate-500" />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      void handleLocationSearch();
+                    }
+                  }}
+                  aria-label="Search shares"
+                  placeholder="Search by city, place or listing title"
+                  className="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => void handleLocationSearch()}
+                  className="rounded-full bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-sky-500"
+                >
+                  Search
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="outline" className="rounded-full border-slate-200 bg-white" onClick={handleUseMyLocation}>
+                  <Compass className="mr-2 h-4 w-4" />
+                  Near me
+                </Button>
+                <Button asChild className="rounded-full bg-[image:var(--gradient-hero)] text-white border-0 hover:opacity-95">
+                  <Link to="/new">
+                    <Sparkles className="mr-2 h-4 w-4" /> Create share
+                  </Link>
+                </Button>
               </div>
             </div>
-          </div>
-
-          <div className="mt-5">
-            <h1 className="text-4xl font-black tracking-[-0.06em] text-slate-900">WeFriends</h1>
-          </div>
-
-          <div className="mt-4 flex items-center gap-3 rounded-full border border-slate-200 bg-white/80 px-4 py-3 shadow-sm backdrop-blur">
-            <Search className="h-4 w-4 text-slate-500" />
-            <input
-              aria-label="Search people and groups"
-              placeholder="Search friends, events, groups"
-              className="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
-            />
-            <SlidersHorizontal className="h-4 w-4 text-slate-500" />
           </div>
         </header>
 
-        <div className="relative mx-4 mt-4 overflow-hidden rounded-[30px] border border-white/60 bg-[#dfeaf5] shadow-[0_20px_30px_-24px_rgba(15,23,42,0.35)]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.72),transparent_30%),linear-gradient(135deg,#dfeaf5_0%,#dfeaf5_54%,#c3d4e4_100%)]" />
-          <div className="absolute inset-0 opacity-60 [background-image:linear-gradient(rgba(255,255,255,0.5)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.5)_1px,transparent_1px)] [background-size:28px_28px]" />
-
-          <div className="relative z-10 p-3">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 rounded-2xl border border-white/70 bg-white/85 px-3 py-2 shadow-sm backdrop-blur-sm">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#ffe8d6] text-sm">
-                  ☕
-                </div>
-                <div className="min-w-0">
-                  <div className="text-[11px] font-bold text-slate-900">Coffee Meetup</div>
-                  <div className="text-[10px] text-slate-500">3 friends nearby</div>
-                </div>
+        <div className="mt-5 grid gap-5 xl:grid-cols-[350px_minmax(0,1fr)_360px]">
+          <aside className="rounded-[28px] border border-slate-200 bg-white/90 p-4 shadow-[0_18px_40px_rgba(15,23,42,0.05)]">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Discovery</p>
+                <h2 className="mt-1 text-2xl font-black tracking-[-0.06em] text-slate-900">Find nearby</h2>
               </div>
-              <button className="rounded-full border border-slate-200 bg-white/80 p-2 shadow-sm">
-                <Bell className="h-4 w-4 text-slate-600" />
-              </button>
+              <div className="rounded-full bg-sky-50 p-2 text-sky-700">
+                <SlidersHorizontal className="h-4 w-4" />
+              </div>
             </div>
 
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 rounded-2xl border border-[#f0d9ff] bg-white/85 px-3 py-2 shadow-sm backdrop-blur-sm">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#fff1cc] text-sm">
-                  ⛺
-                </div>
-                <div className="min-w-0">
-                  <div className="text-[11px] font-bold text-slate-900">Camping Trip</div>
-                  <div className="text-[10px] text-slate-500">This weekend</div>
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Categories
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {categoryOptions.map((option) => (
+                    <button
+                      key={option.slug}
+                      type="button"
+                      onClick={() => setSelectedCategory(option.slug)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                        selectedCategory === option.slug
+                          ? "border-sky-600 bg-sky-600 text-white shadow-sm"
+                          : "border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <button className="rounded-full border border-slate-200 bg-white/80 p-2 shadow-sm">
-                <Sparkles className="h-4 w-4 text-slate-600" />
-              </button>
-            </div>
 
-            <div className="relative h-[500px] overflow-hidden rounded-[28px]">
-              <div className="absolute inset-0 rounded-[28px] bg-[linear-gradient(180deg,rgba(255,255,255,0.15),rgba(255,255,255,0.05))]" />
-
-              {floatingPins.map((pin, index) => (
-                <div
-                  key={pin.label}
-                  className="absolute -translate-x-1/2 -translate-y-1/2"
-                  style={{ left: pin.x, top: pin.y }}
-                >
-                  <div
-                    className={`flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-[10px] font-bold text-white shadow-lg ${pin.color}`}
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Radius
+                  <select
+                    value={selectedRadius}
+                    onChange={(event) => setSelectedRadius(Number(event.target.value))}
+                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 outline-none transition focus:border-sky-400"
                   >
-                    {pin.label.slice(0, 1)}
-                  </div>
-                  {index === 0 && (
-                    <div className="mt-1 rounded-full border border-slate-200 bg-white/85 px-2 py-0.5 text-[9px] font-medium text-slate-700 shadow-sm">
-                      {pin.label}
-                    </div>
-                  )}
-                </div>
-              ))}
+                    {[1, 5, 10, 25, 50, 100].map((radius) => (
+                      <option key={radius} value={radius}>
+                        Within {radius} km
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-              <div className="absolute left-1/2 top-[48%] z-10 -translate-x-1/2 -translate-y-1/2">
-                <div className="rounded-[28px] border border-slate-200 bg-white/85 px-4 py-3 text-center shadow-[0_20px_40px_-24px_rgba(15,23,42,0.35)] backdrop-blur-sm">
-                  <div className="text-3xl font-black tracking-[-0.06em] text-slate-900">
-                    San Francisco
-                  </div>
-                  <div className="mt-2 text-sm text-slate-500">WeFriends</div>
-                </div>
-              </div>
-
-              <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between gap-2">
-                <div className="flex-1 rounded-full border border-slate-200 bg-white/85 px-3 py-2 text-center text-xs font-medium text-slate-600 shadow-sm backdrop-blur-sm">
-                  Home
-                </div>
-                <div className="flex-1 rounded-full border border-slate-200 bg-primary/10 px-3 py-2 text-center text-xs font-semibold text-primary shadow-sm">
-                  Explore
-                </div>
-                <div className="flex-1 rounded-full border border-slate-200 bg-white/85 px-3 py-2 text-center text-xs font-medium text-slate-600 shadow-sm backdrop-blur-sm">
-                  Events
-                </div>
-                <div className="flex-1 rounded-full border border-slate-200 bg-white/85 px-3 py-2 text-center text-xs font-medium text-slate-600 shadow-sm backdrop-blur-sm">
-                  Chats
-                </div>
-                <div className="flex-1 rounded-full border border-slate-200 bg-white/85 px-3 py-2 text-center text-xs font-medium text-slate-600 shadow-sm backdrop-blur-sm">
-                  Profile
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="px-4 pt-4">
-          <div className="space-y-3">
-            {data?.map((l, index) => {
-              const active = selected?.id === l.id;
-              return (
-                <div
-                  key={l.id}
-                  className={`rounded-2xl border p-3 transition ${
-                    active ? "border-primary bg-primary/5 shadow-sm" : "border-white/80 bg-white/75"
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setSelectedId(l.id)}
-                    className="flex w-full items-start justify-between gap-3 text-left"
+                <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Sort by
+                  <select
+                    value={sortMode}
+                    onChange={(event) => setSortMode(event.target.value as "nearest" | "newest" | "price")}
+                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 outline-none transition focus:border-sky-400"
                   >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white ${index % 2 === 0 ? "bg-[#2ec4b6]" : "bg-[#7c6cff]"}`}
-                        >
-                          {l.title.slice(0, 1).toUpperCase()}
+                    <option value="nearest">Nearest</option>
+                    <option value="newest">Newest</option>
+                    <option value="price">Price</option>
+                  </select>
+                </label>
+              </div>
+
+              {userLocationMessage && (
+                <div className="rounded-2xl border border-sky-100 bg-sky-50 px-3 py-2 text-xs text-sky-700">
+                  {userLocationMessage}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 space-y-3">
+              {isLoading ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
+                  Loading listings…
+                </div>
+              ) : error ? (
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                  We couldn’t load the map. Try refreshing the page.
+                </div>
+              ) : filteredListings.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
+                  No shares match your filters right now.
+                </div>
+              ) : (
+                filteredListings.map((listing) => {
+                  const active = selectedListing?.id === listing.id;
+                  const distance =
+                    userCoords && listing.coords ? `· ${haversineKm(userCoords, listing.coords).toFixed(1)} km away` : "";
+
+                  return (
+                    <button
+                      key={listing.id}
+                      type="button"
+                      onClick={() => setSelectedId(listing.id)}
+                      className={`w-full rounded-[24px] border p-4 text-left transition ${
+                        active
+                          ? "border-sky-200 bg-sky-50 shadow-[0_12px_25px_rgba(14,116,144,0.08)]"
+                          : "border-slate-200 bg-white hover:border-slate-300"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                              style={{ backgroundColor: getCategoryColor(listing.category) }}
+                            >
+                              {getCategoryBadge(listing.category).slice(0, 1).toUpperCase()}
+                            </div>
+                            <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600">
+                              {getCategoryBadge(listing.category)}
+                            </span>
+                          </div>
+
+                          <h3 className="mt-3 text-base font-bold tracking-[-0.04em] text-slate-900">
+                            {listing.title}
+                          </h3>
+
+                          <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
+                            <MapPin className="h-3.5 w-3.5" />
+                            <span className="line-clamp-1">{listing.location ?? "Flexible location"}</span>
+                          </div>
+
+                          <p className="mt-2 line-clamp-2 text-xs text-slate-600">{listing.description ?? "Join this share and save together."}</p>
+
+                          <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                            <span>{listing.starts_at ? new Date(listing.starts_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "Flexible timing"}</span>
+                            <span>{distance}</span>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-bold text-slate-900">{l.title}</div>
-                          <div className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-500">
-                            <MapPin className="h-3 w-3" />
-                            <span className="truncate">{l.location}</span>
+
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="text-right">
+                            <div className="text-lg font-black tracking-tight text-sky-700">
+                              {formatMoney(listing.cost_per_person ?? listing.total_cost)}
+                            </div>
+                            <div className="text-[10px] uppercase tracking-[0.14em] text-slate-500">
+                              {listing.capacity ? `${listing.capacity} slots` : "Open"}
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-center rounded-full bg-slate-100 p-2 text-slate-700">
+                            <ArrowUpRight className="h-4 w-4" />
                           </div>
                         </div>
                       </div>
-                      {l.description && (
-                        <p className="mt-2 line-clamp-2 text-xs text-slate-600">{l.description}</p>
-                      )}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </aside>
+
+          <main className="min-h-[760px] overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.05)]">
+            <div className="relative h-[760px] w-full">
+              <Map
+                mapLib={maplibregl}
+                initialViewState={viewState}
+                viewState={viewState}
+                onMove={(event) => setViewState(event.viewState)}
+                mapStyle="https://demotiles.maplibre.org/style.json"
+                style={{ width: "100%", height: "100%" }}
+                attributionControl
+              >
+                <NavigationControl position="top-right" showCompass showZoom />
+                <GeolocateControl position="top-right" />
+
+                {userCoords && (
+                  <Marker longitude={userCoords[0]} latitude={userCoords[1]} anchor="center">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-emerald-500 shadow-md">
+                      <LocateFixed className="h-2.5 w-2.5 text-white" />
                     </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">
-                        {l.category}
-                      </span>
-                      <Link
-                        to="/listings/$id"
-                        params={{ id: l.id }}
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary"
-                        aria-label={`Open ${l.title}`}
+                  </Marker>
+                )}
+
+                {filteredListings.map((listing) => {
+                  if (!listing.coords) return null;
+                  const selected = selectedListing?.id === listing.id;
+                  const markerColor = getCategoryColor(listing.category);
+
+                  return (
+                    <Marker
+                      key={listing.id}
+                      longitude={listing.coords[0]}
+                      latitude={listing.coords[1]}
+                      anchor="bottom"
+                      onClick={() => setSelectedId(listing.id)}
+                    >
+                      <button
+                        type="button"
+                        aria-label={listing.title}
+                        className="flex items-center justify-center rounded-full border-2 border-white shadow-md transition-transform hover:scale-105"
+                        style={{
+                          width: selected ? 32 : 24,
+                          height: selected ? 32 : 24,
+                          backgroundColor: markerColor,
+                          boxShadow: selected ? `0 0 0 8px ${markerColor}20` : undefined,
+                        }}
                       >
-                        <ArrowUpRight className="h-4 w-4" />
-                      </Link>
+                        <span className="text-[9px] font-bold text-white">
+                          {getCategoryBadge(listing.category).slice(0, 1).toUpperCase()}
+                        </span>
+                      </button>
+                    </Marker>
+                  );
+                })}
+
+                {selectedListing && selectedListing.coords && (
+                  <Popup
+                    longitude={selectedListing.coords[0]}
+                    latitude={selectedListing.coords[1]}
+                    anchor="bottom"
+                    closeButton={false}
+                    closeOnClick={false}
+                    offset={[0, -18]}
+                  >
+                    <div className="w-[260px] rounded-2xl p-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-sm font-bold text-slate-900">{selectedListing.title}</div>
+                        <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600">
+                          {getCategoryBadge(selectedListing.category)}
+                        </span>
+                      </div>
+                        <p className="mt-2 text-xs text-slate-600">{selectedListing.location ?? "Flexible pickup location"}</p>
+                        <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                          <span>{formatMoney(selectedListing.cost_per_person ?? selectedListing.total_cost)}</span>
+                          <span>
+                            {selectedListing.capacity ? `${selectedListing.capacity} slots` : "Open"}
+                          </span>
+                        </div>
+                        <div className="mt-3 flex items-center gap-2">
+                          <Link to="/listings/$id" params={{ id: selectedListing.id }} className="inline-flex flex-1 items-center justify-center rounded-full bg-sky-600 px-3 py-2 text-xs font-semibold text-white">
+                            View share
+                          </Link>
+                          <button type="button" onClick={() => setSelectedId(null)} className="rounded-full border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600">
+                            Close
+                          </button>
+                        </div>
                     </div>
-                  </button>
+                  </Popup>
+                )}
+              </Map>
+            </div>
+          </main>
+
+          <aside className="rounded-[28px] border border-slate-200 bg-white/90 p-4 shadow-[0_18px_40px_rgba(15,23,42,0.05)]">
+            {selectedListing ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Selected</p>
+                    <h3 className="mt-1 text-2xl font-black tracking-[-0.06em] text-slate-900">
+                      {selectedListing.title}
+                    </h3>
+                  </div>
+                  <div className="rounded-full bg-sky-50 p-2 text-sky-700">
+                    <Users className="h-4 w-4" />
+                  </div>
                 </div>
-              );
-            })}
-          </div>
+
+                <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50">
+                  <div
+                    className="h-32 w-full bg-cover bg-center"
+                    style={{
+                      backgroundImage:
+                        "linear-gradient(135deg, rgba(14,116,144,0.2), rgba(125,211,252,0.08)), url(https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=900&q=80)",
+                    }}
+                  />
+                </div>
+
+                <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-600">
+                      {getCategoryBadge(selectedListing.category)}
+                    </span>
+                    <span className="text-xs font-medium text-slate-500">
+                      {selectedListing.status ?? "Open"}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 text-3xl font-black tracking-tight text-sky-700">
+                    {formatMoney(selectedListing.cost_per_person ?? selectedListing.total_cost)}
+                    <span className="ml-1 text-sm font-medium text-slate-500">/ person</span>
+                  </div>
+
+                  <div className="mt-4 space-y-2 text-sm text-slate-600">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-slate-400" />
+                      <span>{selectedListing.location ?? "Location flexible"}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-slate-400" />
+                      <span>{selectedListing.capacity ? `${selectedListing.capacity} seats available` : "Open to community"}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CalendarIcon className="h-4 w-4 text-slate-400" />
+                      <span>
+                        {selectedListing.starts_at
+                          ? new Date(selectedListing.starts_at).toLocaleString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                            })
+                          : "Flexible times"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-sm leading-6 text-slate-600">
+                  {selectedListing.description ?? "A friendly community share opportunity for people looking to save together."}
+                </p>
+
+                <div className="flex flex-col gap-3">
+                  <Button asChild className="rounded-full bg-[image:var(--gradient-hero)] text-white border-0 hover:opacity-95">
+                    <Link to="/listings/$id" params={{ id: selectedListing.id }}>
+                      View full details
+                    </Link>
+                  </Button>
+                  <Button type="button" variant="outline" className="rounded-full border-slate-200 bg-white">
+                    Save listing
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex h-full min-h-[300px] items-center justify-center rounded-[22px] border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">
+                Select a listing to preview details.
+              </div>
+            )}
+          </aside>
         </div>
       </div>
     </div>
+  );
+}
+
+function CalendarIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M8 3v4M16 3v4M3 10h18" />
+    </svg>
   );
 }
