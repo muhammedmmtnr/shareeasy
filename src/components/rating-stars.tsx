@@ -4,7 +4,11 @@ export function RatingStars({
   value,
   count,
   size = 14,
-}: { value: number; count?: number; size?: number }) {
+}: {
+  value: number;
+  count?: number;
+  size?: number;
+}) {
   const full = Math.round(value);
   return (
     <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">

@@ -33,14 +33,18 @@ function AuthPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (error) toast.error(error.message);
-    else { toast.success("Welcome back!"); navigate({ to: "/" }); }
+    else {
+      toast.success("Welcome back!");
+      navigate({ to: "/" });
+    }
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     const { error } = await supabase.auth.signUp({
-      email, password,
+      email,
+      password,
       options: {
         emailRedirectTo: window.location.origin,
         data: { display_name: name || email.split("@")[0] },
@@ -48,7 +52,10 @@ function AuthPage() {
     });
     setBusy(false);
     if (error) toast.error(error.message);
-    else { toast.success("Account created — you're in!"); navigate({ to: "/" }); }
+    else {
+      toast.success("Account created — you're in!");
+      navigate({ to: "/" });
+    }
   };
 
   const handleGoogle = async () => {
@@ -80,13 +87,29 @@ function AuthPage() {
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div>
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" required value={email} onChange={e => setEmail(e.target.value)} />
+                  <Input
+                    id="email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
                 <div>
                   <Label htmlFor="password">Password</Label>
-                  <Input id="password" type="password" required value={password} onChange={e => setPassword(e.target.value)} />
+                  <Input
+                    id="password"
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
                 </div>
-                <Button type="submit" disabled={busy} className="w-full rounded-full bg-[image:var(--gradient-hero)] text-white border-0 hover:opacity-95">
+                <Button
+                  type="submit"
+                  disabled={busy}
+                  className="w-full rounded-full bg-[image:var(--gradient-hero)] text-white border-0 hover:opacity-95"
+                >
                   {busy ? "Signing in…" : "Sign in"}
                 </Button>
               </form>
@@ -96,17 +119,39 @@ function AuthPage() {
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div>
                   <Label htmlFor="name">Display name</Label>
-                  <Input id="name" value={name} onChange={e => setName(e.target.value)} placeholder="Your name" />
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your name"
+                  />
                 </div>
                 <div>
                   <Label htmlFor="su-email">Email</Label>
-                  <Input id="su-email" type="email" required value={email} onChange={e => setEmail(e.target.value)} />
+                  <Input
+                    id="su-email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
                 <div>
                   <Label htmlFor="su-password">Password</Label>
-                  <Input id="su-password" type="password" required minLength={6} value={password} onChange={e => setPassword(e.target.value)} />
+                  <Input
+                    id="su-password"
+                    type="password"
+                    required
+                    minLength={6}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
                 </div>
-                <Button type="submit" disabled={busy} className="w-full rounded-full bg-[image:var(--gradient-hero)] text-white border-0 hover:opacity-95">
+                <Button
+                  type="submit"
+                  disabled={busy}
+                  className="w-full rounded-full bg-[image:var(--gradient-hero)] text-white border-0 hover:opacity-95"
+                >
                   {busy ? "Creating account…" : "Create account"}
                 </Button>
               </form>
@@ -114,7 +159,9 @@ function AuthPage() {
           </Tabs>
 
           <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-card px-2 text-muted-foreground">or</span>
             </div>

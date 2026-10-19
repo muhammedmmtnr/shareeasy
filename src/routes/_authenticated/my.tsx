@@ -3,7 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { SiteHeader } from "@/components/site-header";
 import { ListingCard } from "@/components/listing-card";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
+
+type ListingRow = Database["public"]["Tables"]["listings"]["Row"];
 
 export const Route = createFileRoute("/_authenticated/my")({
   head: () => ({ meta: [{ title: "My shares — ShareX" }] }),
@@ -18,16 +21,20 @@ function MyShares() {
     enabled: !!user,
     queryFn: async () => {
       const [owned, joined] = await Promise.all([
-        supabase.from("listings").select("*").eq("owner_id", user!.id).order("created_at", { ascending: false }),
+        supabase
+          .from("listings")
+          .select("*")
+          .eq("owner_id", user!.id)
+          .order("created_at", { ascending: false }),
         supabase.from("listing_participants").select("listing_id").eq("user_id", user!.id),
       ]);
-      const joinedIds = (joined.data ?? []).map(p => p.listing_id);
-      let joinedListings: typeof owned.data = [];
+      const joinedIds = (joined.data ?? []).map((p: { listing_id: string }) => p.listing_id);
+      let joinedListings: ListingRow[] = [];
       if (joinedIds.length) {
         const { data: lst } = await supabase.from("listings").select("*").in("id", joinedIds);
-        joinedListings = lst ?? [];
+        joinedListings = (lst ?? []) as ListingRow[];
       }
-      return { owned: owned.data ?? [], joined: joinedListings ?? [] };
+      return { owned: (owned.data ?? []) as ListingRow[], joined: joinedListings };
     },
   });
 
@@ -40,7 +47,9 @@ function MyShares() {
         <section className="mt-10">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Shares I'm hosting</h2>
-            <Link to="/new" className="text-sm text-primary hover:underline">+ New share</Link>
+            <Link to="/new" className="text-sm text-primary hover:underline">
+              + New share
+            </Link>
           </div>
           {!data?.owned.length ? (
             <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
@@ -48,7 +57,9 @@ function MyShares() {
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {data.owned.map(l => <ListingCard key={l.id} listing={l} />)}
+              {data.owned.map((l: ListingRow) => (
+                <ListingCard key={l.id} listing={l} />
+              ))}
             </div>
           )}
         </section>
@@ -61,7 +72,9 @@ function MyShares() {
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {data.joined.map(l => <ListingCard key={l.id} listing={l} />)}
+              {data.joined.map((l: ListingRow) => (
+                <ListingCard key={l.id} listing={l} />
+              ))}
             </div>
           )}
         </section>

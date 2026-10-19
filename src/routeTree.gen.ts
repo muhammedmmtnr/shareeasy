@@ -9,10 +9,14 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ShareControlRouteImport } from './routes/share-control'
+import { Route as PulseRouteImport } from './routes/pulse'
+import { Route as PlannerRouteImport } from './routes/planner'
 import { Route as MapRouteImport } from './routes/map'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as DiscoverRouteImport } from './routes/discover'
 import { Route as CommunitiesRouteImport } from './routes/communities'
+import { Route as CommitmentClockRouteImport } from './routes/commitment-clock'
 import { Route as BrowseRouteImport } from './routes/browse'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -28,6 +32,21 @@ import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedMessagesIdRouteImport } from './routes/_authenticated/messages.$id'
 import { Route as AuthenticatedCommunitiesIdRouteImport } from './routes/_authenticated/communities.$id'
 
+const ShareControlRoute = ShareControlRouteImport.update({
+  id: '/share-control',
+  path: '/share-control',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PulseRoute = PulseRouteImport.update({
+  id: '/pulse',
+  path: '/pulse',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlannerRoute = PlannerRouteImport.update({
+  id: '/planner',
+  path: '/planner',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MapRoute = MapRouteImport.update({
   id: '/map',
   path: '/map',
@@ -46,6 +65,11 @@ const DiscoverRoute = DiscoverRouteImport.update({
 const CommunitiesRoute = CommunitiesRouteImport.update({
   id: '/communities',
   path: '/communities',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommitmentClockRoute = CommitmentClockRouteImport.update({
+  id: '/commitment-clock',
+  path: '/commitment-clock',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BrowseRoute = BrowseRouteImport.update({
@@ -123,10 +147,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
+  '/commitment-clock': typeof CommitmentClockRoute
   '/communities': typeof CommunitiesRoute
   '/discover': typeof DiscoverRoute
   '/how-it-works': typeof HowItWorksRoute
   '/map': typeof MapRoute
+  '/planner': typeof PlannerRoute
+  '/pulse': typeof PulseRoute
+  '/share-control': typeof ShareControlRoute
   '/activity': typeof AuthenticatedActivityRoute
   '/messages': typeof AuthenticatedMessagesRouteWithChildren
   '/my': typeof AuthenticatedMyRoute
@@ -142,10 +170,14 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
+  '/commitment-clock': typeof CommitmentClockRoute
   '/communities': typeof CommunitiesRoute
   '/discover': typeof DiscoverRoute
   '/how-it-works': typeof HowItWorksRoute
   '/map': typeof MapRoute
+  '/planner': typeof PlannerRoute
+  '/pulse': typeof PulseRoute
+  '/share-control': typeof ShareControlRoute
   '/activity': typeof AuthenticatedActivityRoute
   '/messages': typeof AuthenticatedMessagesRouteWithChildren
   '/my': typeof AuthenticatedMyRoute
@@ -163,10 +195,14 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
+  '/commitment-clock': typeof CommitmentClockRoute
   '/communities': typeof CommunitiesRoute
   '/discover': typeof DiscoverRoute
   '/how-it-works': typeof HowItWorksRoute
   '/map': typeof MapRoute
+  '/planner': typeof PlannerRoute
+  '/pulse': typeof PulseRoute
+  '/share-control': typeof ShareControlRoute
   '/_authenticated/activity': typeof AuthenticatedActivityRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRouteWithChildren
   '/_authenticated/my': typeof AuthenticatedMyRoute
@@ -184,10 +220,14 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/browse'
+    | '/commitment-clock'
     | '/communities'
     | '/discover'
     | '/how-it-works'
     | '/map'
+    | '/planner'
+    | '/pulse'
+    | '/share-control'
     | '/activity'
     | '/messages'
     | '/my'
@@ -203,10 +243,14 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/browse'
+    | '/commitment-clock'
     | '/communities'
     | '/discover'
     | '/how-it-works'
     | '/map'
+    | '/planner'
+    | '/pulse'
+    | '/share-control'
     | '/activity'
     | '/messages'
     | '/my'
@@ -223,10 +267,14 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/browse'
+    | '/commitment-clock'
     | '/communities'
     | '/discover'
     | '/how-it-works'
     | '/map'
+    | '/planner'
+    | '/pulse'
+    | '/share-control'
     | '/_authenticated/activity'
     | '/_authenticated/messages'
     | '/_authenticated/my'
@@ -244,16 +292,41 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   BrowseRoute: typeof BrowseRoute
+  CommitmentClockRoute: typeof CommitmentClockRoute
   CommunitiesRoute: typeof CommunitiesRoute
   DiscoverRoute: typeof DiscoverRoute
   HowItWorksRoute: typeof HowItWorksRoute
   MapRoute: typeof MapRoute
+  PlannerRoute: typeof PlannerRoute
+  PulseRoute: typeof PulseRoute
+  ShareControlRoute: typeof ShareControlRoute
   CategorySlugRoute: typeof CategorySlugRoute
   ListingsIdRoute: typeof ListingsIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/share-control': {
+      id: '/share-control'
+      path: '/share-control'
+      fullPath: '/share-control'
+      preLoaderRoute: typeof ShareControlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pulse': {
+      id: '/pulse'
+      path: '/pulse'
+      fullPath: '/pulse'
+      preLoaderRoute: typeof PulseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/planner': {
+      id: '/planner'
+      path: '/planner'
+      fullPath: '/planner'
+      preLoaderRoute: typeof PlannerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/map': {
       id: '/map'
       path: '/map'
@@ -280,6 +353,13 @@ declare module '@tanstack/react-router' {
       path: '/communities'
       fullPath: '/communities'
       preLoaderRoute: typeof CommunitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/commitment-clock': {
+      id: '/commitment-clock'
+      path: '/commitment-clock'
+      fullPath: '/commitment-clock'
+      preLoaderRoute: typeof CommitmentClockRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/browse': {
@@ -424,10 +504,14 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   BrowseRoute: BrowseRoute,
+  CommitmentClockRoute: CommitmentClockRoute,
   CommunitiesRoute: CommunitiesRoute,
   DiscoverRoute: DiscoverRoute,
   HowItWorksRoute: HowItWorksRoute,
   MapRoute: MapRoute,
+  PlannerRoute: PlannerRoute,
+  PulseRoute: PulseRoute,
+  ShareControlRoute: ShareControlRoute,
   CategorySlugRoute: CategorySlugRoute,
   ListingsIdRoute: ListingsIdRoute,
 }

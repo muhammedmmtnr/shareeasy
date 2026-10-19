@@ -19,19 +19,35 @@ function MessagesLayout() {
     queryKey: ["conversations", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data: cs } = await supabase.from("conversations").select("*")
+      const { data: cs } = await supabase
+        .from("conversations")
+        .select("*")
         .order("last_message_at", { ascending: false });
       if (!cs?.length) return [];
-      const listingIds = [...new Set(cs.map(c => c.listing_id))];
-      const otherIds = [...new Set(cs.map(c => c.joiner_id === user!.id ? c.owner_id : c.joiner_id))];
+      const conversations = cs as Array<{
+        id: string;
+        listing_id: string;
+        joiner_id: string;
+        owner_id: string;
+        last_message_at: string;
+      }>;
+      const listingIds = [...new Set(conversations.map((c) => c.listing_id))];
+      const otherIds = [
+        ...new Set(conversations.map((c) => (c.joiner_id === user!.id ? c.owner_id : c.joiner_id))),
+      ];
       const [{ data: ls }, { data: profs }] = await Promise.all([
         supabase.from("listings").select("id,title,category").in("id", listingIds),
         supabase.from("profiles").select("id,display_name,verified").in("id", otherIds),
       ]);
-      return cs.map(c => ({
+      return conversations.map((c) => ({
         ...c,
-        listing: ls?.find(l => l.id === c.listing_id),
-        other: profs?.find(p => p.id === (c.joiner_id === user!.id ? c.owner_id : c.joiner_id)),
+        listing: ls?.find(
+          (l: { id: string; title: string; category: string }) => l.id === c.listing_id,
+        ),
+        other: profs?.find(
+          (p: { id: string; display_name: string | null; verified?: boolean }) =>
+            p.id === (c.joiner_id === user!.id ? c.owner_id : c.joiner_id),
+        ),
       }));
     },
   });
@@ -51,30 +67,41 @@ function MessagesLayout() {
               </div>
             ) : (
               <ul className="divide-y divide-border/60">
-                {convos.map(c => (
-                  <li key={c.id}>
-                    <Link
-                      to="/messages/$id"
-                      params={{ id: c.id }}
-                      className="flex flex-col px-4 py-3 hover:bg-muted/50 transition"
-                      activeProps={{ className: "bg-muted/70" }}
-                    >
-                      <span className="text-sm font-medium truncate">{c.listing?.title ?? "Listing"}</span>
-                      <span className="text-xs text-muted-foreground truncate">
-                        with {c.other?.display_name ?? "user"}
-                        {c.other?.verified && " ✓"}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground mt-0.5">
-                        {new Date(c.last_message_at).toLocaleString()}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
+                {convos.map(
+                  (c: {
+                    id: string;
+                    last_message_at: string;
+                    listing?: { title?: string | null };
+                    other?: { display_name?: string | null; verified?: boolean };
+                  }) => (
+                    <li key={c.id}>
+                      <Link
+                        to="/messages/$id"
+                        params={{ id: c.id }}
+                        className="flex flex-col px-4 py-3 hover:bg-muted/50 transition"
+                        activeProps={{ className: "bg-muted/70" }}
+                      >
+                        <span className="text-sm font-medium truncate">
+                          {c.listing?.title ?? "Listing"}
+                        </span>
+                        <span className="text-xs text-muted-foreground truncate">
+                          with {c.other?.display_name ?? "user"}
+                          {c.other?.verified && " ✓"}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground mt-0.5">
+                          {new Date(c.last_message_at).toLocaleString()}
+                        </span>
+                      </Link>
+                    </li>
+                  ),
+                )}
               </ul>
             )}
           </aside>
           <main>
-            {isThread ? <Outlet /> : (
+            {isThread ? (
+              <Outlet />
+            ) : (
               <div className="rounded-2xl border border-dashed border-border p-12 text-center text-muted-foreground">
                 Select a conversation to start chatting.
               </div>

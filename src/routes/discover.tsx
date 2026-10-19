@@ -1,6 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Bookmark, Clock, MapPin, Plus, Send, Users } from "lucide-react";
+import {
+  ArrowRight,
+  Bookmark,
+  Clock3,
+  Compass,
+  MapPin,
+  Plus,
+  Search,
+  Send,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { CATEGORY_BY_SLUG } from "@/lib/categories";
@@ -12,9 +23,16 @@ export const Route = createFileRoute("/discover")({
   head: () => ({
     meta: [
       { title: "Discover shares — ShareCheya" },
-      { name: "description", content: "Scroll a live feed of nearby shares — rides, stays, food, trips and more. Join in one tap." },
+      {
+        name: "description",
+        content:
+          "Scroll a live feed of nearby shares — rides, stays, food, trips and more. Join in one tap.",
+      },
       { property: "og:title", content: "Discover shares — ShareCheya" },
-      { property: "og:description", content: "A live feed of nearby shares you can join in one tap." },
+      {
+        property: "og:description",
+        content: "A live feed of nearby shares you can join in one tap.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -30,7 +48,11 @@ function whenLabel(iso: string | null) {
   if (diff === 0) return "Today";
   if (diff === 1) return "Tomorrow";
   if (diff < 0) return "Past";
-  return new Date(iso).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+  return new Date(iso).toLocaleDateString(undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
 }
 
 function DiscoverPage() {
@@ -80,85 +102,196 @@ function DiscoverPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-28">
-      <header className="sticky top-0 z-30 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border/60 bg-background/90 px-4 py-3 backdrop-blur-lg">
-        <h1 className="truncate text-lg font-bold tracking-tight">Discover</h1>
-        <Button asChild size="sm" className="rounded-full bg-[image:var(--gradient-hero)] text-white border-0 hover:opacity-95">
-          <Link to="/new"><Plus className="mr-1 h-4 w-4" /> Create</Link>
-        </Button>
-      </header>
-
-      <div className="mx-auto max-w-lg space-y-8 px-4 py-5">
-        {isLoading && <p className="py-16 text-center text-sm text-muted-foreground">Loading feed…</p>}
-
-        {!isLoading && !data?.length && (
-          <div className="rounded-2xl border border-dashed border-border p-12 text-center">
-            <h2 className="font-semibold">Nothing here yet</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Post the first share and your community will see it here.</p>
-            <Button asChild className="mt-5 rounded-full"><Link to="/new">Create a share</Link></Button>
+    <div className="min-h-screen bg-[#f4f7fb] pb-28">
+      <div className="mx-auto max-w-[480px] bg-[#f4f7fb] pb-6 shadow-[0_20px_60px_rgba(15,23,42,0.05)]">
+        <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-[#f4f7fb]/90 px-4 py-3 backdrop-blur-xl">
+          <div className="flex items-center gap-3">
+            <button className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm">
+              <Compass className="h-4 w-4" />
+            </button>
+            <div className="flex-1 text-center">
+              <h1 className="text-[15px] font-black uppercase tracking-[0.18em] text-slate-500">
+                Discover
+              </h1>
+            </div>
+            <Button
+              asChild
+              size="sm"
+              className="rounded-full bg-[image:var(--gradient-hero)] border-0 text-white shadow-sm"
+            >
+              <Link to="/new">
+                <Plus className="mr-1 h-4 w-4" /> Create
+              </Link>
+            </Button>
           </div>
-        )}
 
-        {data?.map((l) => {
-          const cat = CATEGORY_BY_SLUG[l.category];
-          const spots = Math.max(0, l.capacity - l.joinedCount - 1);
-          return (
-            <article key={l.id} className="space-y-3">
-              <Link to="/listings/$id" params={{ id: l.id }} className="relative block overflow-hidden rounded-3xl">
-                {l.image_url ? (
-                  <img src={l.image_url} alt={l.title} className="h-56 w-full object-cover" loading="lazy" />
-                ) : (
-                  <div className={`h-56 w-full bg-gradient-to-br ${cat?.color ?? "from-primary to-accent"}`} />
-                )}
-                <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-background/85 px-3 py-1.5 text-xs font-semibold backdrop-blur">
-                  <Clock className="h-3.5 w-3.5" /> {whenLabel(l.starts_at)}
-                </span>
-              </Link>
+          <div className="mt-4 flex items-center gap-3 rounded-full border border-slate-200 bg-white/90 px-4 py-3 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.25)]">
+            <Search className="h-4 w-4 text-slate-500" />
+            <input
+              aria-label="Search listings"
+              placeholder="What do you want to do today?"
+              className="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
+            />
+            <Sparkles className="h-4 w-4 text-violet-500" />
+          </div>
+        </header>
 
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-                <span className="truncate text-xs font-bold uppercase tracking-widest text-primary">
-                  {cat?.label ?? l.category}
-                </span>
-                <span className="flex shrink-0 items-center gap-1">
-                  <Button size="icon" variant="ghost" className="rounded-full" aria-label="Share" onClick={() => share(l.id, l.title)}>
-                    <Send className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className={`rounded-full ${isSaved(l.id) ? "text-primary" : ""}`}
-                    aria-label="Save"
-                    aria-pressed={isSaved(l.id)}
-                    onClick={() => toggle(l.id)}
-                  >
-                    <Bookmark className={`h-4 w-4 ${isSaved(l.id) ? "fill-current" : ""}`} />
-                  </Button>
-                </span>
-              </div>
+        <div className="px-4 pt-4">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+                Trending
+              </p>
+              <h2 className="mt-1 text-2xl font-black tracking-[-0.05em] text-slate-900">
+                Nearby moments
+              </h2>
+            </div>
+            <button className="rounded-full border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 shadow-sm">
+              Filters
+            </button>
+          </div>
 
-              <Link to="/listings/$id" params={{ id: l.id }} className="block">
-                <h2 className="text-xl font-bold leading-snug hover:text-primary">{l.title}</h2>
-              </Link>
-              <p className="line-clamp-2 text-sm text-muted-foreground">{l.description}</p>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: "Ride", accent: "bg-[#eaf7ff] text-sky-700", icon: "🚗" },
+              { label: "Travel", accent: "bg-[#eefaf3] text-emerald-700", icon: "✈️" },
+              { label: "Food", accent: "bg-[#fff4e9] text-orange-700", icon: "🍜" },
+              { label: "Group", accent: "bg-[#f3ebff] text-violet-700", icon: "👥" },
+            ].map((item) => (
+              <button
+                key={item.label}
+                className={`flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-3 py-3 text-left shadow-sm ${item.accent}`}
+              >
+                <span className="text-lg">{item.icon}</span>
+                <span className="text-sm font-semibold">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-sm text-muted-foreground">
-                <span className="flex min-w-0 items-center gap-1.5">
-                  <MapPin className="h-4 w-4 shrink-0" />
-                  <span className="truncate">
-                    {l.canSeeLocation ? (l.location ?? "Location flexible") : "Location locked until you're attending"}
-                  </span>
-                </span>
-                <span className="flex shrink-0 items-center gap-1.5">
-                  <Users className="h-4 w-4" /> {spots > 0 ? `${spots} spots` : "Full"}
-                </span>
-              </div>
+        <div className="px-4 pt-5">
+          {isLoading && (
+            <p className="py-16 text-center text-sm text-muted-foreground">Loading feed…</p>
+          )}
 
-              <Button asChild className="w-full rounded-full bg-[image:var(--gradient-hero)] text-white border-0 hover:opacity-95">
-                <Link to="/listings/$id" params={{ id: l.id }}>I'm interested</Link>
+          {!isLoading && !data?.length && (
+            <div className="rounded-2xl border border-dashed border-border bg-white p-12 text-center shadow-sm">
+              <h2 className="font-semibold">Nothing here yet</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Post the first share and your community will see it here.
+              </p>
+              <Button asChild className="mt-5 rounded-full">
+                <Link to="/new">Create a share</Link>
               </Button>
-            </article>
-          );
-        })}
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {data?.map((l) => {
+              const cat = CATEGORY_BY_SLUG[l.category];
+              const spots = Math.max(0, l.capacity - l.joinedCount - 1);
+
+              return (
+                <article
+                  key={l.id}
+                  className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_18px_30px_-24px_rgba(15,23,42,0.3)]"
+                >
+                  <Link to="/listings/$id" params={{ id: l.id }} className="block relative">
+                    {l.image_url ? (
+                      <img
+                        src={l.image_url}
+                        alt={l.title}
+                        className="h-52 w-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div
+                        className={`h-52 w-full bg-gradient-to-br ${cat?.color ?? "from-primary to-accent"}`}
+                      />
+                    )}
+                    <div className="absolute inset-x-0 top-0 flex items-center justify-between p-3">
+                      <span className="rounded-full border border-white/70 bg-white/75 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-700 backdrop-blur-sm">
+                        {cat?.label ?? l.category}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          toggle(l.id);
+                        }}
+                        className={`flex h-9 w-9 items-center justify-center rounded-full border border-white/80 bg-white/80 shadow-sm backdrop-blur-sm ${isSaved(l.id) ? "text-primary" : "text-slate-700"}`}
+                        aria-label="Save listing"
+                      >
+                        <Bookmark className={`h-4 w-4 ${isSaved(l.id) ? "fill-current" : ""}`} />
+                      </button>
+                    </div>
+                    <div className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-background/85 px-2.5 py-1.5 text-[10px] font-semibold text-slate-700 backdrop-blur-sm">
+                      <Clock3 className="h-3 w-3" /> {whenLabel(l.starts_at)}
+                    </div>
+                  </Link>
+
+                  <div className="space-y-3 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <Link to="/listings/$id" params={{ id: l.id }} className="block">
+                          <h2 className="text-xl font-black tracking-[-0.04em] text-slate-900 hover:text-primary">
+                            {l.title}
+                          </h2>
+                        </Link>
+                        <div className="mt-1 flex items-center gap-1.5 text-[12px] text-slate-500">
+                          <MapPin className="h-3.5 w-3.5" />
+                          <span className="truncate">
+                            {l.canSeeLocation
+                              ? (l.location ?? "Location flexible")
+                              : "Location locked until you're attending"}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => share(l.id, l.title)}
+                        className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-700 transition hover:bg-slate-100"
+                        aria-label="Share listing"
+                      >
+                        <Send className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <p className="line-clamp-2 text-sm leading-6 text-slate-600">{l.description}</p>
+
+                    <div className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                      <div className="flex items-center gap-1.5">
+                        <Users className="h-4 w-4 text-primary" />
+                        <span>{spots > 0 ? `${spots} spots left` : "Full"}</span>
+                      </div>
+                      <span className="font-semibold text-slate-900">
+                        {l.capacity ? `${l.capacity} people` : "Open"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-left">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                          Match score
+                        </div>
+                        <div className="mt-1 text-lg font-black text-primary">92%</div>
+                      </div>
+
+                      <Button
+                        asChild
+                        className="rounded-full bg-[image:var(--gradient-hero)] border-0 text-white shadow-sm"
+                      >
+                        <Link to="/listings/$id" params={{ id: l.id }}>
+                          I'm interested <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );

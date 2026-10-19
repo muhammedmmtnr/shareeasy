@@ -7,12 +7,19 @@ import { ListingCard } from "@/components/listing-card";
 import { Button } from "@/components/ui/button";
 import { CATEGORIES } from "@/lib/categories";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+
+type ListingRow = Database["public"]["Tables"]["listings"]["Row"];
 
 export const Route = createFileRoute("/browse")({
   head: () => ({
     meta: [
       { title: "Browse shares — ShareX" },
-      { name: "description", content: "Browse all active cost-sharing opportunities across mobility, stays, food, software, travel and more." },
+      {
+        name: "description",
+        content:
+          "Browse all active cost-sharing opportunities across mobility, stays, food, software, travel and more.",
+      },
     ],
   }),
   component: BrowsePage,
@@ -34,8 +41,9 @@ function BrowsePage() {
     },
   });
 
-  const listingsWithLocations = listings?.filter((listing) => listing.location) ?? [];
-  const selectedListing = listingsWithLocations.find((listing) => listing.id === selectedId) ?? listingsWithLocations[0];
+  const listingsWithLocations = listings?.filter((listing: ListingRow) => listing.location) ?? [];
+  const selectedListing =
+    listingsWithLocations.find((listing) => listing.id === selectedId) ?? listingsWithLocations[0];
   const mapUrl = selectedListing?.location
     ? `https://www.google.com/maps?q=${encodeURIComponent(selectedListing.location)}&output=embed`
     : null;
@@ -48,9 +56,14 @@ function BrowsePage() {
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="text-4xl font-bold tracking-tight">Browse all shares</h1>
-              <p className="mt-2 text-muted-foreground">Discover ways to save across every category.</p>
+              <p className="mt-2 text-muted-foreground">
+                Discover ways to save across every category.
+              </p>
             </div>
-            <div className="inline-flex w-fit items-center rounded-xl border border-border bg-card p-1" aria-label="Browse view">
+            <div
+              className="inline-flex w-fit items-center rounded-xl border border-border bg-card p-1"
+              aria-label="Browse view"
+            >
               <Button
                 type="button"
                 variant={view === "list" ? "secondary" : "ghost"}
@@ -74,7 +87,7 @@ function BrowsePage() {
         </header>
 
         <div className="flex flex-wrap gap-2 mb-8">
-          {CATEGORIES.map(c => (
+          {CATEGORIES.map((c) => (
             <Link
               key={c.slug}
               to="/category/$slug"
@@ -91,20 +104,29 @@ function BrowsePage() {
         ) : !listings || listings.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border p-16 text-center">
             <h3 className="text-lg font-semibold">No shares yet</h3>
-            <p className="mt-2 text-sm text-muted-foreground">Be the first to post one and start saving.</p>
-            <Link to="/new" className="inline-flex mt-6 items-center justify-center rounded-full bg-[image:var(--gradient-hero)] text-white px-5 py-2 text-sm font-medium">
+            <p className="mt-2 text-sm text-muted-foreground">
+              Be the first to post one and start saving.
+            </p>
+            <Link
+              to="/new"
+              className="inline-flex mt-6 items-center justify-center rounded-full bg-[image:var(--gradient-hero)] text-white px-5 py-2 text-sm font-medium"
+            >
               Post a share
             </Link>
           </div>
         ) : view === "list" ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {listings.map(l => <ListingCard key={l.id} listing={l} />)}
+            {listings.map((l) => (
+              <ListingCard key={l.id} listing={l} />
+            ))}
           </div>
         ) : listingsWithLocations.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border p-16 text-center">
             <MapPin className="mx-auto h-8 w-8 text-muted-foreground" />
             <h3 className="mt-4 text-lg font-semibold">No mapped shares yet</h3>
-            <p className="mt-2 text-sm text-muted-foreground">Shares with a location will appear here.</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Shares with a location will appear here.
+            </p>
           </div>
         ) : (
           <div className="grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.4fr)]">
@@ -156,7 +178,9 @@ function BrowsePage() {
                   referrerPolicy="no-referrer-when-downgrade"
                 />
               ) : (
-                <div className="flex h-full min-h-[420px] items-center justify-center text-sm text-muted-foreground">Select a share to view its map.</div>
+                <div className="flex h-full min-h-[420px] items-center justify-center text-sm text-muted-foreground">
+                  Select a share to view its map.
+                </div>
               )}
             </div>
           </div>

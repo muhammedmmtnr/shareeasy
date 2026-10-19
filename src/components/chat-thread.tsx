@@ -16,16 +16,35 @@ export function ChatThread({ conversationId, meId }: { conversationId: string; m
 
   useEffect(() => {
     let mounted = true;
-    supabase.from("messages").select("*").eq("conversation_id", conversationId).order("created_at")
-      .then(({ data }) => { if (mounted && data) setMessages(data); });
+    supabase
+      .from("messages")
+      .select("*")
+      .eq("conversation_id", conversationId)
+      .order("created_at")
+      .then(({ data }: { data: Message[] | null }) => {
+        if (mounted && data) setMessages(data);
+      });
 
     const channel = supabase
       .channel(`messages:${conversationId}`)
-      .on("postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
-        (payload) => setMessages(prev => prev.some(m => m.id === (payload.new as Message).id) ? prev : [...prev, payload.new as Message]))
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload: { new: Message }) =>
+          setMessages((prev) =>
+            prev.some((m: Message) => m.id === payload.new.id) ? prev : [...prev, payload.new],
+          ),
+      )
       .subscribe();
-    return () => { mounted = false; supabase.removeChannel(channel); };
+    return () => {
+      mounted = false;
+      supabase.removeChannel(channel);
+    };
   }, [conversationId]);
 
   useEffect(() => {
@@ -36,13 +55,18 @@ export function ChatThread({ conversationId, meId }: { conversationId: string; m
     const text = body.trim();
     if (!text) return;
     setSending(true);
-    const { error, data } = await supabase.from("messages")
+    const { error, data } = await supabase
+      .from("messages")
       .insert({ conversation_id: conversationId, sender_id: meId, body: text })
-      .select().single();
+      .select()
+      .single();
     setSending(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     setBody("");
-    if (data) setMessages(prev => prev.some(m => m.id === data.id) ? prev : [...prev, data]);
+    if (data) setMessages((prev) => (prev.some((m) => m.id === data.id) ? prev : [...prev, data]));
   };
 
   return (
@@ -55,29 +79,46 @@ export function ChatThread({ conversationId, meId }: { conversationId: string; m
           <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
             Say hi 👋
           </div>
-        ) : messages.map(m => {
-          const mine = m.sender_id === meId;
-          return (
-            <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap
-                ${mine ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-muted rounded-bl-sm"}`}>
-                {m.body}
-                <div className={`text-[10px] mt-0.5 ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                  {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+        ) : (
+          messages.map((m) => {
+            const mine = m.sender_id === meId;
+            return (
+              <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                <div
+                  className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap
+                ${mine ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-muted rounded-bl-sm"}`}
+                >
+                  {m.body}
+                  <div
+                    className={`text-[10px] mt-0.5 ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}
+                  >
+                    {new Date(m.created_at).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
       <form
         className="flex gap-2 p-3 border-t border-border/60"
-        onSubmit={(e) => { e.preventDefault(); send(); }}
+        onSubmit={(e) => {
+          e.preventDefault();
+          send();
+        }}
       >
         <Textarea
           value={body}
-          onChange={e => setBody(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+          onChange={(e) => setBody(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              send();
+            }
+          }}
           placeholder="Type a message…"
           rows={1}
           maxLength={1000}

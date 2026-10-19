@@ -1,22 +1,49 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Sparkles, Wallet, Shield, Users, Radio, MessageCircle, Network, Home as HomeIcon } from "lucide-react";
+import {
+  ArrowRight,
+  Search,
+  MapPin,
+  Sparkles,
+  Wallet,
+  Shield,
+  Users,
+  Radio,
+  MessageCircle,
+  Network,
+  Home as HomeIcon,
+  Clock3,
+  BadgeCheck,
+  TrendingUp,
+  Plus,
+} from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { ListingCard } from "@/components/listing-card";
 import { Button } from "@/components/ui/button";
 import { CATEGORIES } from "@/lib/categories";
 import { supabase } from "@/integrations/supabase/client";
-import logo3d from "@/assets/sharecheya-3d.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "ShareX — Share Anything. Save Everything." },
-      { name: "description", content: "Find people to split rides, hotels, software, food, travel & more. Save money through community-powered cost sharing." },
+      { title: "ShareCheya — Ask. Match. Share. Save." },
+      {
+        name: "description",
+        content:
+          "Ask your community, discover the right people, share the resource, and save together on rides, stays, food, travel and more.",
+      },
     ],
   }),
   component: Index,
 });
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
 
 function Index() {
   const { data: featured } = useQuery({
@@ -33,219 +60,428 @@ function Index() {
     },
   });
 
+  const liveAroundYou = [
+    { icon: "🚗", label: "4 people need a ride" },
+    { icon: "🛒", label: "8 people buying groceries" },
+    { icon: "🛠", label: "2 cameras available" },
+    { icon: "🍕", label: "6 people joining lunch" },
+  ];
+
+  const communityPills = ["Whitefield", "Friends", "Work", "Bangalore Students"];
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-28">
       <SiteHeader />
 
-      {/* HERO */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[image:var(--gradient-hero)] opacity-95" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,white_0%,transparent_50%)] opacity-20" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-20 sm:py-28 grid lg:grid-cols-[1.1fr_1fr] gap-12 items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur-sm px-4 py-1.5 text-sm text-white/95 mb-6 border border-white/20">
-              <Sparkles className="h-3.5 w-3.5" /> India's community-powered super app
+      <main className="mx-auto max-w-7xl px-4 pb-12 pt-6 sm:px-6">
+        <section className="rounded-[30px] border border-border/60 bg-[linear-gradient(135deg,rgba(16,185,129,0.08),rgba(59,130,246,0.08))] p-4 sm:p-6 lg:p-8">
+          <div className="mb-5 flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Good evening 👋</p>
+              <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-5xl">
+                What do you want to save on?
+              </h1>
             </div>
-            <h1 className="text-5xl sm:text-7xl font-bold tracking-tight text-white leading-[1.05]">
-              Share Anything.<br />
-              <span className="bg-gradient-to-r from-yellow-200 to-pink-200 bg-clip-text text-transparent">
-                Save Everything.
+            <div className="hidden rounded-full border border-border bg-white/80 px-3 py-2 text-sm font-medium text-foreground shadow-sm sm:flex sm:items-center sm:gap-2">
+              <MapPin className="h-4 w-4 text-primary" /> Whitefield
+            </div>
+          </div>
+
+          <div className="rounded-[26px] border border-border/60 bg-card p-3 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.25)]">
+            <label className="flex items-center gap-3 rounded-2xl bg-muted/70 px-4 py-4 text-sm text-muted-foreground ring-1 ring-transparent transition focus-within:ring-primary/40">
+              <Search className="h-5 w-5 text-primary" />
+              <input
+                aria-label="Ask your community"
+                placeholder="🔍 Ask your community..."
+                className="w-full border-0 bg-transparent text-base text-foreground placeholder:text-muted-foreground focus:outline-none"
+                defaultValue="Need a ride to Whitefield tomorrow"
+              />
+            </label>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Button
+              asChild
+              size="lg"
+              className="rounded-full bg-[image:var(--gradient-hero)] text-white border-0 hover:opacity-95"
+            >
+              <Link to="/discover">
+                Find a Share <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="rounded-full border-border bg-white/70 hover:bg-white"
+            >
+              <Link to="/new">
+                <Plus className="mr-2 h-4 w-4" /> Post a Share
+              </Link>
+            </Button>
+          </div>
+        </section>
+
+        <section className="mt-8 rounded-[32px] border border-border/60 bg-card p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.25)]">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                Shareezy innovation layer
+              </p>
+              <h2 className="mt-1 text-2xl font-bold">Smart coordination for real life</h2>
+            </div>
+            <Button asChild size="sm" variant="secondary" className="rounded-full">
+              <Link to="/pulse">Open Pulse</Link>
+            </Button>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {[
+              {
+                title: "Shareezy Pulse",
+                description: "Intent-driven action launcher for group plans.",
+                href: "/pulse",
+              },
+              {
+                title: "Group Intelligence",
+                description: "Build event drafts, task lists, and polls fast.",
+                href: "/planner",
+              },
+              {
+                title: "ShareControl",
+                description: "Permission-aware links and access management.",
+                href: "/share-control",
+              },
+              {
+                title: "Commitment Clock",
+                description: "Shared timers, reminders, and milestones.",
+                href: "/commitment-clock",
+              },
+            ].map((item) => (
+              <Link
+                key={item.title}
+                to={item.href}
+                className="rounded-2xl border border-border/60 bg-muted/30 p-4 transition hover:border-primary/30 hover:bg-primary/5"
+              >
+                <div className="text-base font-bold text-foreground">{item.title}</div>
+                <p className="mt-2 text-sm text-muted-foreground">{item.description}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-[28px] border border-border/60 bg-card p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.25)]">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                  Live around you
+                </p>
+                <h2 className="mt-1 text-2xl font-bold">📍 Around You</h2>
+              </div>
+              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                Live
               </span>
-            </h1>
-            <p className="mt-6 text-lg sm:text-xl text-white/90 max-w-2xl">
-              Rides, hotels, software, group orders, trips, equipment — split the bill, share the resource, build the community.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild size="lg" className="rounded-full bg-white text-foreground hover:bg-white/95 h-12 px-7 text-base">
-                <Link to="/browse">Browse shares <ArrowRight className="ml-1 h-4 w-4" /></Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-full h-12 px-7 text-base bg-transparent border-white/40 text-white hover:bg-white/10 hover:text-white">
-                <Link to="/new">Post a share</Link>
-              </Button>
             </div>
-            <div className="mt-10 grid grid-cols-3 gap-6 max-w-md">
-              {[
-                { n: "9", l: "categories" },
-                { n: "60%", l: "avg savings" },
-                { n: "100%", l: "community" },
-              ].map(s => (
-                <div key={s.l}>
-                  <div className="text-3xl font-bold text-white">{s.n}</div>
-                  <div className="text-xs text-white/70 uppercase tracking-wider">{s.l}</div>
+            <div className="space-y-3">
+              {liveAroundYou.map((item) => (
+                <div
+                  key={item.label}
+                  className="flex items-center justify-between rounded-2xl border border-border/60 bg-muted/40 px-3 py-3 text-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">{item.icon}</span>
+                    <span className="font-medium text-foreground">{item.label}</span>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
                 </div>
               ))}
             </div>
           </div>
 
-          {/* 3D LOGO */}
-          <div className="relative flex justify-center lg:justify-end perspective-1200">
-            <div className="absolute inset-0 -z-0 bg-[radial-gradient(circle_at_center,white_0%,transparent_60%)] opacity-25 blur-2xl" />
-            <img
-              src={logo3d.url}
-              alt="ShareCheya"
-              className="relative w-[280px] sm:w-[380px] lg:w-[460px] xl:w-[520px] h-auto animate-float-3d drop-shadow-[0_30px_60px_rgba(0,0,0,0.45)]"
-              style={{ transform: "rotateY(-12deg) rotateX(8deg)" }}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* CATEGORIES */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 py-20">
-        <div className="flex items-end justify-between mb-10">
-          <div>
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">What do you want to share?</h2>
-            <p className="mt-2 text-muted-foreground">Nine ways to save with your community.</p>
-          </div>
-          <Link to="/browse" className="hidden sm:inline-flex items-center text-sm font-medium text-primary hover:underline">
-            View all <ArrowRight className="ml-1 h-3.5 w-3.5" />
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4">
-          {CATEGORIES.map(cat => {
-            const Icon = cat.icon;
-            return (
-              <Link
-                key={cat.slug}
-                to="/category/$slug"
-                params={{ slug: cat.slug }}
-                className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card p-6 transition-all hover:shadow-[var(--shadow-card)] hover:-translate-y-1"
-              >
-                <div className={`absolute -top-12 -right-12 h-32 w-32 rounded-full bg-gradient-to-br ${cat.color} opacity-10 group-hover:opacity-20 transition-opacity`} />
-                <div className={`inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${cat.color} text-white mb-4`}>
-                  <Icon className="h-6 w-6" />
-                </div>
-                <h3 className="font-semibold text-lg">{cat.label}</h3>
-                <p className="text-sm text-muted-foreground mt-1">{cat.tagline}</p>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* LIVE COMMUNITY PLATFORM */}
-      <section className="relative overflow-hidden border-y border-border/60 bg-gradient-to-br from-emerald-50 via-teal-50 to-indigo-50 dark:from-emerald-950/30 dark:via-teal-950/20 dark:to-indigo-950/30">
-        <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-emerald-300/20 blur-3xl" />
-        <div className="absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-indigo-300/20 blur-3xl" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-20">
-          <div className="text-center max-w-3xl mx-auto mb-12">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/80 dark:bg-white/10 backdrop-blur-sm px-4 py-1.5 text-xs font-semibold text-primary mb-5 border border-primary/20">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+          <div className="rounded-[28px] border border-border/60 bg-card p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.25)]">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                  Smart Match
+                </p>
+                <h2 className="mt-1 text-2xl font-bold">✨ Matched for you</h2>
+              </div>
+              <span className="rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700">
+                92% match
               </span>
-              LAUNCHING SOON · 🇮🇳 INDIA'S FIRST
             </div>
-            <h2 className="text-3xl sm:text-5xl font-bold tracking-tight">
-              India's First <span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 bg-clip-text text-transparent">Live Community Platform</span>
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              The future of communities is about to change. A new way to discover people, share ideas, and build communities — all in one place.
+            <div className="space-y-4">
+              {[
+                {
+                  from: "Bangalore",
+                  to: "Mysore",
+                  when: "Sunday · 7:30 AM",
+                  people: "3 people",
+                  price: "₹350/person",
+                },
+                {
+                  from: "Whitefield",
+                  to: "Airport",
+                  when: "Tomorrow · 6:00 AM",
+                  people: "2 seats",
+                  price: "₹250/person",
+                },
+              ].map((match) => (
+                <div
+                  key={`${match.from}-${match.to}`}
+                  className="rounded-2xl border border-border/60 bg-muted/30 p-3"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-lg font-bold">
+                        {match.from} → {match.to}
+                      </div>
+                      <div className="mt-1 text-sm text-muted-foreground">{match.when}</div>
+                    </div>
+                    <div className="text-right text-sm">
+                      <div className="font-bold text-primary">{match.people}</div>
+                      <div className="text-muted-foreground">{match.price}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Button asChild variant="secondary" className="mt-4 w-full rounded-full">
+              <Link to="/discover">View matches</Link>
+            </Button>
+          </div>
+        </section>
+
+        <section className="mt-8 grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="rounded-[28px] border border-border/60 bg-card p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.25)]">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                  Your savings
+                </p>
+                <h2 className="mt-1 text-2xl font-bold">💰 Your savings</h2>
+              </div>
+              <span className="text-xs font-semibold text-muted-foreground">This month</span>
+            </div>
+            <div className="flex items-center justify-center py-4">
+              <div className="relative flex h-36 w-36 items-center justify-center rounded-full border-[12px] border-emerald-100 bg-[conic-gradient(#34d399_0deg,#34d399_245deg,#e2e8f0_245deg_360deg)]">
+                <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full bg-white text-center shadow-inner">
+                  <span className="text-xl font-black text-primary">₹4,820</span>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                    Saved
+                  </span>
+                </div>
+              </div>
+            </div>
+            <p className="text-center text-sm text-muted-foreground">
+              Your community has saved{" "}
+              <span className="font-semibold text-foreground">₹18,42,500</span> this month.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { i: Radio, t: "Real-time Conversations", d: "Live, in-the-moment discussions with your tribe.", c: "from-rose-500 to-pink-500", e: "✨" },
-              { i: MessageCircle, t: "Live Chat", d: "Instant messaging across every community room.", c: "from-emerald-500 to-teal-500", e: "💬" },
-              { i: Network, t: "Network & Connect", d: "Find people who share your goals and interests.", c: "from-sky-500 to-indigo-500", e: "🌐" },
-              { i: HomeIcon, t: "Community Hubs", d: "Apartments, campuses, offices — one place for all.", c: "from-amber-500 to-orange-500", e: "🏠" },
-            ].map(f => (
-              <div key={f.t} className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-6 hover:-translate-y-1 hover:shadow-[var(--shadow-card)] transition-all">
-                <div className={`absolute -top-10 -right-10 h-28 w-28 rounded-full bg-gradient-to-br ${f.c} opacity-10 group-hover:opacity-20 transition`} />
-                <div className={`inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${f.c} text-white mb-4`}>
-                  <f.i className="h-6 w-6" />
-                </div>
-                <h3 className="font-semibold text-base flex items-center gap-1.5">{f.t} <span>{f.e}</span></h3>
-                <p className="text-sm text-muted-foreground mt-1">{f.d}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button asChild size="lg" className="rounded-full bg-[image:var(--gradient-hero)] text-white border-0 h-12 px-7">
-              <Link to="/communities">Explore Community Hubs <ArrowRight className="ml-1 h-4 w-4" /></Link>
-            </Button>
-            <p className="text-xs text-muted-foreground">Stay tuned for the official launch.</p>
-          </div>
-
-          <div className="mt-8 flex flex-wrap justify-center gap-2">
-            {["#India", "#Community", "#LiveChat", "#Networking", "#Innovation", "#StartupLaunch"].map(t => (
-              <span key={t} className="rounded-full bg-white/70 dark:bg-white/10 border border-border/60 px-3 py-1 text-xs font-medium text-muted-foreground">
-                {t}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-
-      {/* FEATURED */}
-      {featured && featured.length > 0 && (
-        <section className="bg-muted/40 border-y border-border/60">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-20">
-            <div className="flex items-end justify-between mb-10">
+          <div className="rounded-[28px] border border-border/60 bg-card p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.25)]">
+            <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Live shares</h2>
-                <p className="mt-2 text-muted-foreground">Active opportunities to save right now.</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                  Your communities
+                </p>
+                <h2 className="mt-1 text-2xl font-bold">👥 Your communities</h2>
               </div>
+              <Button asChild size="sm" variant="ghost" className="rounded-full">
+                <Link to="/communities">Join</Link>
+              </Button>
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {featured.map(l => <ListingCard key={l.id} listing={l} />)}
+            <div className="flex flex-wrap gap-2">
+              {communityPills.map((community) => (
+                <span
+                  key={community}
+                  className="rounded-full border border-border bg-muted/60 px-3 py-2 text-sm font-medium text-foreground"
+                >
+                  {community}
+                </span>
+              ))}
+            </div>
+            <div className="mt-5 space-y-3">
+              {[
+                { name: "Ride sharing", value: "₹1,200" },
+                { name: "Group buying", value: "₹1,400" },
+                { name: "Borrowing", value: "₹900" },
+                { name: "Food sharing", value: "₹620" },
+              ].map((row) => (
+                <div
+                  key={row.name}
+                  className="flex items-center justify-between rounded-2xl border border-border/60 bg-muted/30 px-3 py-2.5 text-sm"
+                >
+                  <span className="text-muted-foreground">{row.name}</span>
+                  <span className="font-bold text-foreground">{row.value}</span>
+                </div>
+              ))}
             </div>
           </div>
         </section>
-      )}
 
-      {/* WHY */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 py-20">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Why ShareX</h2>
-          <p className="mt-3 text-muted-foreground">A new economy built on sharing, not spending.</p>
-        </div>
-        <div className="grid sm:grid-cols-3 gap-6">
-          {[
-            { i: Wallet, t: "Save up to 80%", d: "Split fixed costs across multiple people and unlock bulk pricing." },
-            { i: Users, t: "Real communities", d: "Apartments, colleges, offices, startups — verified, trusted groups." },
-            { i: Shield, t: "Safe by design", d: "ID verification, ratings, escrow payments and dispute resolution." },
-          ].map(f => (
-            <div key={f.t} className="rounded-2xl border border-border/60 bg-card p-6">
-              <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[image:var(--gradient-warm)] text-white mb-4">
-                <f.i className="h-5 w-5" />
-              </div>
-              <h3 className="font-semibold text-lg">{f.t}</h3>
-              <p className="text-sm text-muted-foreground mt-1">{f.d}</p>
+        <section className="mt-8 rounded-[28px] border border-border/60 bg-card p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.25)]">
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                Group deals
+              </p>
+              <h2 className="mt-1 text-2xl font-bold">🔥 Group deals</h2>
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 pb-20">
-        <div className="relative overflow-hidden rounded-3xl bg-[image:var(--gradient-hero)] p-10 sm:p-16 text-center">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,white_0%,transparent_60%)] opacity-15" />
-          <div className="relative">
-            <h2 className="text-3xl sm:text-5xl font-bold text-white">Stop paying full price.</h2>
-            <p className="mt-4 text-lg text-white/90 max-w-xl mx-auto">Join ShareX and start saving with your community today.</p>
-            <Button asChild size="lg" className="mt-8 rounded-full bg-white text-foreground hover:bg-white/95 h-12 px-8">
-              <Link to="/auth">Get started — it's free</Link>
+            <Button
+              asChild
+              size="sm"
+              className="rounded-full bg-[image:var(--gradient-hero)] text-white border-0"
+            >
+              <Link to="/new">
+                <Plus className="mr-2 h-4 w-4" /> Share
+              </Link>
             </Button>
           </div>
-        </div>
-      </section>
 
-      <footer className="border-t border-border/60">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 text-sm text-muted-foreground flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span>ShareX — Share Anything. Save Everything.</span>
+          {featured && featured.length > 0 ? (
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {featured.slice(0, 3).map((listing) => (
+                <ListingCard key={listing.id} listing={listing} />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-border bg-muted/40 p-10 text-center text-sm text-muted-foreground">
+              No shares nearby yet. Be the first to create one.
+            </div>
+          )}
+        </section>
+
+        <section className="mt-8 grid gap-5 md:grid-cols-3">
+          {[
+            {
+              icon: Sparkles,
+              title: "Ask the community",
+              text: "Need a ride, a drill, a room or a bulk order? Describe it in plain English.",
+            },
+            {
+              icon: Users,
+              title: "Smart Match",
+              text: "We connect compatible I HAVE and I NEED posts instantly.",
+            },
+            {
+              icon: TrendingUp,
+              title: "Save more",
+              text: "Track the real savings from your community action every month.",
+            },
+          ].map(({ icon: Icon, title, text }) => (
+            <div key={title} className="rounded-[24px] border border-border/60 bg-card p-5">
+              <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[image:var(--gradient-hero)] text-white">
+                <Icon className="h-5 w-5" />
+              </div>
+              <h3 className="text-lg font-bold">{title}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">{text}</p>
+            </div>
+          ))}
+        </section>
+
+        <section className="mt-8 rounded-[28px] border border-border/60 bg-gradient-to-br from-emerald-500 via-teal-500 to-blue-600 p-6 text-white shadow-[0_18px_40px_-20px_rgba(13,148,136,0.9)] sm:p-8">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-100">
+                Community first
+              </p>
+              <h2 className="mt-2 text-3xl font-black">Share more. Save more.</h2>
+            </div>
+            <Button
+              asChild
+              size="lg"
+              className="rounded-full bg-white text-foreground hover:bg-white/95 border-0"
+            >
+              <Link to="/browse">Explore deals</Link>
+            </Button>
           </div>
-          <div className="flex gap-4">
-            <Link to="/browse" className="hover:text-foreground">Browse</Link>
-            <Link to="/how-it-works" className="hover:text-foreground">How it works</Link>
+          <p className="mt-3 max-w-2xl text-sm text-emerald-50/90">
+            Find people who need the same things you do. Share the resource, split the bill, and
+            save together.
+          </p>
+        </section>
+
+        <section className="mt-8 grid gap-4 sm:grid-cols-3">
+          {[
+            { icon: Clock3, title: "Ask", text: "Describe the need in plain English" },
+            { icon: BadgeCheck, title: "Match", text: "Find the nearest compatible share" },
+            { icon: Wallet, title: "Save", text: "Track the savings from each join" },
+          ].map(({ icon: Icon, title, text }) => (
+            <div
+              key={title}
+              className="rounded-[24px] border border-border/60 bg-card p-5 text-center"
+            >
+              <div className="mx-auto mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+                <Icon className="h-5 w-5" />
+              </div>
+              <h3 className="text-lg font-bold">{title}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">{text}</p>
+            </div>
+          ))}
+        </section>
+
+        <section className="mt-8 rounded-[28px] border border-border/60 bg-card p-5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.25)]">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                Popular categories
+              </p>
+              <h2 className="mt-1 text-2xl font-bold">What people are sharing</h2>
+            </div>
+            <Link to="/browse" className="text-sm font-medium text-primary hover:underline">
+              View all
+            </Link>
           </div>
-        </div>
-      </footer>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {CATEGORIES.map((category) => {
+              const Icon = category.icon;
+              return (
+                <Link
+                  key={category.slug}
+                  to="/category/$slug"
+                  params={{ slug: category.slug }}
+                  className="flex items-center justify-between rounded-2xl border border-border/60 bg-muted/40 p-3 text-left transition-colors hover:bg-muted/70"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${category.color} text-white`}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="font-semibold">{category.label}</div>
+                      <div className="text-xs text-muted-foreground">{category.tagline}</div>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
+        <footer className="mt-8 border-t border-border/60 pt-6 text-sm text-muted-foreground">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span>ShareCheya — Share it. Split it. Save it.</span>
+            </div>
+            <div className="flex gap-4">
+              <Link to="/discover" className="hover:text-foreground">
+                Discover
+              </Link>
+              <Link to="/communities" className="hover:text-foreground">
+                Communities
+              </Link>
+              <Link to="/how-it-works" className="hover:text-foreground">
+                How it works
+              </Link>
+            </div>
+          </div>
+        </footer>
+      </main>
     </div>
   );
 }

@@ -36,9 +36,13 @@ function VerifyPage() {
   const verify = async () => {
     if (otp !== "123456") return toast.error("Invalid code. Use 123456 in this demo.");
     setBusy(true);
-    const { error } = await supabase.from("profiles").update({
-      phone_verified: true, verified: true,
-    }).eq("id", user!.id);
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        phone_verified: true,
+        verified: true,
+      })
+      .eq("id", user!.id);
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("You're verified ✓");
@@ -61,17 +65,27 @@ function VerifyPage() {
           {step === "phone" ? (
             <form onSubmit={sendCode} className="mt-6 space-y-4">
               <div>
-                <Label htmlFor="phone" className="mb-2 block">Phone number</Label>
+                <Label htmlFor="phone" className="mb-2 block">
+                  Phone number
+                </Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input id="phone" value={phone} onChange={e => setPhone(e.target.value)}
-                    placeholder="+91 98765 43210" className="pl-9" />
+                  <Input
+                    id="phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+91 98765 43210"
+                    className="pl-9"
+                  />
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-1">
                   Used only for verification — your number is never shown to other users.
                 </p>
               </div>
-              <Button type="submit" className="w-full rounded-full bg-[image:var(--gradient-hero)] text-white border-0">
+              <Button
+                type="submit"
+                className="w-full rounded-full bg-[image:var(--gradient-hero)] text-white border-0"
+              >
                 Send code
               </Button>
             </form>
@@ -81,14 +95,24 @@ function VerifyPage() {
               <div className="flex justify-center">
                 <InputOTP maxLength={6} value={otp} onChange={setOtp}>
                   <InputOTPGroup>
-                    {[0,1,2,3,4,5].map(i => <InputOTPSlot key={i} index={i} />)}
+                    {[0, 1, 2, 3, 4, 5].map((i) => (
+                      <InputOTPSlot key={i} index={i} />
+                    ))}
                   </InputOTPGroup>
                 </InputOTP>
               </div>
-              <Button onClick={verify} disabled={busy || otp.length !== 6} className="w-full rounded-full bg-[image:var(--gradient-hero)] text-white border-0">
+              <Button
+                onClick={verify}
+                disabled={busy || otp.length !== 6}
+                className="w-full rounded-full bg-[image:var(--gradient-hero)] text-white border-0"
+              >
                 Verify
               </Button>
-              <button type="button" onClick={() => setStep("phone")} className="w-full text-xs text-muted-foreground hover:text-foreground">
+              <button
+                type="button"
+                onClick={() => setStep("phone")}
+                className="w-full text-xs text-muted-foreground hover:text-foreground"
+              >
                 Change number
               </button>
             </div>

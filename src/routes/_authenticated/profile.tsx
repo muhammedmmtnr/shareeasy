@@ -11,9 +11,15 @@ export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
       { title: "Your profile — ShareCheya" },
-      { name: "description", content: "Your ShareCheya profile: rating, verification status and the shares you host." },
+      {
+        name: "description",
+        content: "Your ShareCheya profile: rating, verification status and the shares you host.",
+      },
       { property: "og:title", content: "Your profile — ShareCheya" },
-      { property: "og:description", content: "Your rating, verification status and hosted shares." },
+      {
+        property: "og:description",
+        content: "Your rating, verification status and hosted shares.",
+      },
       { property: "og:type", content: "profile" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -65,23 +71,35 @@ function ProfilePage() {
             </span>
             <div className="min-w-0">
               <div className="flex min-w-0 items-center gap-2">
-                <p className="truncate text-lg font-bold">{profile?.display_name ?? "ShareCheya user"}</p>
+                <p className="truncate text-lg font-bold">
+                  {profile?.display_name ?? "ShareCheya user"}
+                </p>
                 {profile?.verified && <VerifiedBadge />}
               </div>
               <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
               <div className="mt-1">
-                <RatingStars value={Number(profile?.rating_avg ?? 0)} count={profile?.rating_count ?? 0} />
+                <RatingStars
+                  value={Number(profile?.rating_avg ?? 0)}
+                  count={profile?.rating_count ?? 0}
+                />
               </div>
             </div>
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-2">
-            <Button asChild className="rounded-full bg-[image:var(--gradient-hero)] text-white border-0 hover:opacity-95">
-              <Link to="/new"><Plus className="mr-1 h-4 w-4" /> Create</Link>
+            <Button
+              asChild
+              className="rounded-full bg-[image:var(--gradient-hero)] text-white border-0 hover:opacity-95"
+            >
+              <Link to="/new">
+                <Plus className="mr-1 h-4 w-4" /> Create
+              </Link>
             </Button>
             {!profile?.verified && (
               <Button asChild variant="outline" className="rounded-full">
-                <Link to="/verify"><ShieldCheck className="mr-1 h-4 w-4" /> Get verified</Link>
+                <Link to="/verify">
+                  <ShieldCheck className="mr-1 h-4 w-4" /> Get verified
+                </Link>
               </Button>
             )}
           </div>
@@ -99,7 +117,11 @@ function ProfilePage() {
           ))}
         </section>
 
-        <Button variant="ghost" onClick={signOut} className="w-full rounded-full text-destructive hover:text-destructive">
+        <Button
+          variant="ghost"
+          onClick={signOut}
+          className="w-full rounded-full text-destructive hover:text-destructive"
+        >
           <LogOut className="mr-2 h-4 w-4" /> Sign out
         </Button>
       </div>
