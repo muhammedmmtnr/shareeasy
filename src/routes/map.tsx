@@ -1,7 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Map, { GeolocateControl, Marker, NavigationControl, Popup } from "react-map-gl/maplibre";
+import * as maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import {
+  AlertTriangle,
   ArrowUpRight,
   Compass,
   LocateFixed,
@@ -11,9 +15,6 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
-import Map, { GeolocateControl, Marker, NavigationControl, Popup } from "react-map-gl/maplibre";
-import * as maplibregl from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
 import { Button } from "@/components/ui/button";
 import { CATEGORIES } from "@/lib/categories";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,8 +52,23 @@ type MapListing = {
   coords?: [number, number] | null;
 };
 
+type GeocodeResult = {
+  label: string;
+  lat: number;
+  lon: number;
+  type?: string;
+  address?: string;
+};
+
 const DEFAULT_CENTER: [number, number] = [77.209, 28.6139];
-const SEARCH_CACHE = new Map<string, [number, number]>();
+const MAP_STYLE_URL = (import.meta.env.VITE_MAP_STYLE_URL ?? "").trim();
+const GEOCODING_PROVIDER = (import.meta.env.VITE_GEOCODING_PROVIDER ?? "none").trim().toLowerCase();
+const ROUTING_PROVIDER = (import.meta.env.VITE_ROUTING_PROVIDER ?? "none").trim().toLowerCase();
+const SEARCH_CACHE = new Map<string, GeocodeResult[]>();
+const CATEGORY_OPTIONS = [
+  { slug: "all", label: "All Shares" },
+  ...CATEGORIES.map((category) => ({ slug: category.slug, label: category.label })),
+];
 
 function formatMoney(value: number | null) {
   if (value == null || Number.isNaN(value)) return "Price on request";
@@ -95,56 +111,105 @@ function haversineKm(a: [number, number], b: [number, number]) {
   return 2 * 6371 * Math.asin(Math.sqrt(h));
 }
 
-async function geocodeSingleLocation(query: string): Promise<[number, number] | null> {
-  if (!query || !query.trim()) return null;
-  const key = query.trim().toLowerCase();
-  if (SEARCH_CACHE.has(key)) return SEARCH_CACHE.get(key) ?? null;
+async function geocodeAddress(query: string, signal?: AbortSignal): Promise<GeocodeResult[]> {
+  const normalized = query.trim();
+  if (!normalized) return [];
 
-  try {
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`,
-      {
-        headers: {
-          Accept: "application/json",
-          "User-Agent": "ShareCheyaApp/1.0",
-        },
-      },
-    );
-    const payload = (await response.json()) as Array<{ lat?: string; lon?: string }>;
-    const first = payload[0];
-    if (!first?.lat || !first?.lon) return null;
-    const coords: [number, number] = [Number(first.lon), Number(first.lat)];
-    SEARCH_CACHE.set(key, coords);
-    return coords;
-  } catch {
-    return null;
+  const cacheKey = normalized.toLowerCase();
+  const cached = SEARCH_CACHE.get(cacheKey);
+  if (cached) return cached;
+
+  const response = await fetch(`/api/geocode?query=${encodeURIComponent(normalized)}`, {
+    signal,
+    headers: { Accept: "application/json" },
+  });
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => ({ error: "Search unavailable" }))) as {
+      error?: string;
+    };
+    throw new Error(payload.error ?? "Place lookup failed.");
   }
+
+  const payload = (await response.json()) as { results?: GeocodeResult[] };
+  const results = payload.results ?? [];
+  SEARCH_CACHE.set(cacheKey, results);
+  return results;
 }
 
-async function geocodeListings(listings: MapListing[]) {
-  return Promise.all(
-    listings.map(async (listing) => {
-      const query = listing.location?.trim();
-      if (!query) return { ...listing, coords: null };
-      const coords = await geocodeSingleLocation(query);
-      return { ...listing, coords };
-    }),
-  );
+async function reverseGeocode(lat: number, lon: number, signal?: AbortSignal): Promise<GeocodeResult | null> {
+  const response = await fetch(`/api/geocode?lat=${lat}&lon=${lon}`, {
+    signal,
+    headers: { Accept: "application/json" },
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const payload = (await response.json()) as { results?: GeocodeResult[] };
+  return payload.results?.[0] ?? null;
 }
 
 function MapPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<GeocodeResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedRadius, setSelectedRadius] = useState(25);
   const [sortMode, setSortMode] = useState<"nearest" | "newest" | "price">("nearest");
   const [userCoords, setUserCoords] = useState<[number, number] | null>(null);
-  const [userLocationMessage, setUserLocationMessage] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [manualLocation, setManualLocation] = useState<{ label: string; coords: [number, number] } | null>(null);
   const [viewState, setViewState] = useState({
     longitude: DEFAULT_CENTER[0],
     latitude: DEFAULT_CENTER[1],
     zoom: 4.5,
   });
+  const activeSearchRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      setSearchError(null);
+      return;
+    }
+
+    const controller = new AbortController();
+    activeSearchRef.current?.abort();
+    activeSearchRef.current = controller;
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        setSearchLoading(true);
+        setSearchError(null);
+        const results = await geocodeAddress(trimmed, controller.signal);
+        if (!controller.signal.aborted) {
+          setSearchResults(results.slice(0, 5));
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setSearchResults([]);
+          setSearchError(
+            error instanceof Error ? error.message : "Place lookup failed. Try a broader city name.",
+          );
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setSearchLoading(false);
+        }
+      }
+    }, 350);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [query]);
 
   const { data: listings = [], isLoading, error } = useQuery({
     queryKey: ["map-listings"],
@@ -158,8 +223,28 @@ function MapPage() {
         .limit(50);
 
       if (error) throw error;
-      const baseListings = (data ?? []) as MapListing[];
-      return geocodeListings(baseListings);
+
+      const geocoded = await Promise.all(
+        (data ?? []).map(async (listing: MapListing) => {
+          const location = (listing.location ?? "").trim();
+          if (!location) {
+            return { ...listing, coords: null };
+          }
+
+          try {
+            const matches = await geocodeAddress(location);
+            const primary = matches[0];
+            return {
+              ...listing,
+              coords: primary ? ([primary.lon, primary.lat] as [number, number]) : null,
+            };
+          } catch {
+            return { ...listing, coords: null };
+          }
+        }),
+      );
+
+      return geocoded;
     },
     refetchInterval: 60000,
   });
@@ -208,7 +293,7 @@ function MapPage() {
 
   const handleUseMyLocation = () => {
     if (!navigator.geolocation) {
-      setUserLocationMessage("Geolocation is not supported in this browser.");
+      setStatusMessage("Geolocation is not supported in this browser.");
       return;
     }
 
@@ -216,7 +301,8 @@ function MapPage() {
       (position) => {
         const nextCoords: [number, number] = [position.coords.longitude, position.coords.latitude];
         setUserCoords(nextCoords);
-        setUserLocationMessage("Showing shares near your current location.");
+        setManualLocation(null);
+        setStatusMessage("Showing shares around your current location.");
         setViewState({
           longitude: nextCoords[0],
           latitude: nextCoords[1],
@@ -224,25 +310,80 @@ function MapPage() {
         });
       },
       () => {
-        setUserLocationMessage("Location access was denied. You can still browse by city or neighborhood.");
+        setStatusMessage("Location access was denied. You can still search by city or select a point on the map.");
       },
       { enableHighAccuracy: true, timeout: 15000 },
     );
   };
 
   const handleLocationSearch = async () => {
-    if (!query.trim()) return;
-    const coords = await geocodeSingleLocation(query.trim());
-    if (!coords) {
-      setUserLocationMessage("We couldn’t find that place yet. Try a broader city or neighborhood name.");
+    const trimmed = query.trim();
+    if (!trimmed) {
+      setStatusMessage("Type a city, neighborhood, or place name to look it up.");
       return;
     }
-    setUserCoords(null);
-    setUserLocationMessage(`Showing matches around ${query.trim()}.`);
-    setViewState({ longitude: coords[0], latitude: coords[1], zoom: 10 });
+
+    try {
+      const results = await geocodeAddress(trimmed);
+      const primary = results[0];
+      if (!primary) {
+        setStatusMessage("No place matches that search yet. Try a broader neighborhood or city name.");
+        return;
+      }
+
+      const coords: [number, number] = [primary.lon, primary.lat];
+      setUserCoords(null);
+      setManualLocation({ label: primary.label, coords });
+      setStatusMessage(`Showing matches around ${primary.label}.`);
+      setViewState({ longitude: coords[0], latitude: coords[1], zoom: 10 });
+    } catch (error) {
+      setStatusMessage(
+        error instanceof Error ? error.message : "The search provider is unavailable right now.",
+      );
+    }
   };
 
-  const categoryOptions = [{ slug: "all", label: "All Shares" }, ...CATEGORIES.map((category) => ({ slug: category.slug, label: category.label }))];
+  const handleMapPointSelect = async (longitude: number, latitude: number) => {
+    const result = await reverseGeocode(latitude, longitude).catch(() => null);
+    const label = result?.label ?? "Selected on map";
+    setManualLocation({ label, coords: [longitude, latitude] });
+    setUserCoords(null);
+    setStatusMessage(`Selected a point near ${label}.`);
+    setViewState({ longitude, latitude, zoom: 12 });
+  };
+
+  if (!MAP_STYLE_URL) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#edf5ff] px-4 py-10">
+        <div className="max-w-xl rounded-[32px] border border-slate-200 bg-white p-8 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+          <div className="flex items-center gap-3 text-amber-600">
+            <AlertTriangle className="h-6 w-6" />
+            <div className="text-sm font-semibold uppercase tracking-[0.18em]">Map configuration required</div>
+          </div>
+          <h1 className="mt-4 text-3xl font-black tracking-[-0.06em] text-slate-900">
+            Set the production map provider before launching the live map.
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            Add VITE_MAP_STYLE_URL, VITE_GEOCODING_PROVIDER, and VITE_ROUTING_PROVIDER to your environment to enable the real ShareCheya map.
+          </p>
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+            <div className="font-semibold text-slate-900">Example</div>
+            <div className="mt-2 font-mono text-xs">VITE_MAP_STYLE_URL=https://tiles.example.com/style.json</div>
+            <div className="mt-1 font-mono text-xs">VITE_GEOCODING_PROVIDER=mapbox</div>
+            <div className="mt-1 font-mono text-xs">VITE_ROUTING_PROVIDER=mapbox</div>
+          </div>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Button asChild className="rounded-full bg-[image:var(--gradient-hero)] border-0 text-white">
+              <Link to="/discover">Return to discover</Link>
+            </Button>
+            <Button type="button" variant="outline" className="rounded-full border-slate-200 bg-white" onClick={handleUseMyLocation}>
+              Try location without map
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#edf5ff] text-slate-900">
@@ -268,7 +409,7 @@ function MapPage() {
             </div>
 
             <div className="flex flex-1 flex-col gap-3 xl:max-w-[760px] xl:flex-row xl:items-center xl:justify-end">
-              <div className="flex flex-1 items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-4 py-2.5 shadow-inner shadow-slate-100">
+              <div className="relative flex flex-1 items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-4 py-2.5 shadow-inner shadow-slate-100">
                 <Search className="h-4 w-4 text-slate-500" />
                 <input
                   value={query}
@@ -282,6 +423,11 @@ function MapPage() {
                   placeholder="Search by city, place or listing title"
                   className="w-full border-0 bg-transparent text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
                 />
+                {searchLoading && (
+                  <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-sky-600">
+                    Looking up…
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={() => void handleLocationSearch()}
@@ -289,10 +435,47 @@ function MapPage() {
                 >
                   Search
                 </button>
+
+                {searchResults.length > 0 && (
+                  <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-30 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+                    {searchResults.map((result) => (
+                      <button
+                        key={`${result.label}-${result.lon}-${result.lat}`}
+                        type="button"
+                        onClick={() => {
+                          setQuery(result.label);
+                          setSearchResults([]);
+                          setManualLocation({ label: result.label, coords: [result.lon, result.lat] });
+                          setUserCoords(null);
+                          setStatusMessage(`Showing matches around ${result.label}.`);
+                          setViewState({
+                            longitude: result.lon,
+                            latitude: result.lat,
+                            zoom: 10,
+                          });
+                        }}
+                        className="flex w-full items-start gap-3 border-b border-slate-100 px-4 py-3 text-left last:border-b-0 hover:bg-slate-50"
+                      >
+                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-semibold text-slate-900">{result.label}</div>
+                          <div className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-slate-500">
+                            {result.type ?? "Place"}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
-                <Button type="button" variant="outline" className="rounded-full border-slate-200 bg-white" onClick={handleUseMyLocation}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-full border-slate-200 bg-white"
+                  onClick={handleUseMyLocation}
+                >
                   <Compass className="mr-2 h-4 w-4" />
                   Near me
                 </Button>
@@ -324,7 +507,7 @@ function MapPage() {
                   Categories
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {categoryOptions.map((option) => (
+                  {CATEGORY_OPTIONS.map((option) => (
                     <button
                       key={option.slug}
                       type="button"
@@ -371,11 +554,27 @@ function MapPage() {
                 </label>
               </div>
 
-              {userLocationMessage && (
+              {(statusMessage || searchError) && (
                 <div className="rounded-2xl border border-sky-100 bg-sky-50 px-3 py-2 text-xs text-sky-700">
-                  {userLocationMessage}
+                  {searchError ?? statusMessage}
                 </div>
               )}
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-[11px] text-slate-600">
+                <div className="font-semibold uppercase tracking-[0.15em] text-slate-500">Map provider</div>
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <span>Style</span>
+                  <span className="font-medium text-slate-900">{MAP_STYLE_URL ? "Configured" : "Missing"}</span>
+                </div>
+                <div className="mt-1 flex items-center justify-between gap-3">
+                  <span>Geocoder</span>
+                  <span className="font-medium text-slate-900">{GEOCODING_PROVIDER}</span>
+                </div>
+                <div className="mt-1 flex items-center justify-between gap-3">
+                  <span>Routing</span>
+                  <span className="font-medium text-slate-900">{ROUTING_PROVIDER}</span>
+                </div>
+              </div>
             </div>
 
             <div className="mt-5 space-y-3">
@@ -431,10 +630,19 @@ function MapPage() {
                             <span className="line-clamp-1">{listing.location ?? "Flexible location"}</span>
                           </div>
 
-                          <p className="mt-2 line-clamp-2 text-xs text-slate-600">{listing.description ?? "Join this share and save together."}</p>
+                          <p className="mt-2 line-clamp-2 text-xs text-slate-600">
+                            {listing.description ?? "Join this share and save together."}
+                          </p>
 
                           <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
-                            <span>{listing.starts_at ? new Date(listing.starts_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "Flexible timing"}</span>
+                            <span>
+                              {listing.starts_at
+                                ? new Date(listing.starts_at).toLocaleDateString(undefined, {
+                                    month: "short",
+                                    day: "numeric",
+                                  })
+                                : "Flexible timing"}
+                            </span>
                             <span>{distance}</span>
                           </div>
                         </div>
@@ -467,7 +675,10 @@ function MapPage() {
                 initialViewState={viewState}
                 viewState={viewState}
                 onMove={(event) => setViewState(event.viewState)}
-                mapStyle="https://demotiles.maplibre.org/style.json"
+                onClick={(event) => {
+                  void handleMapPointSelect(event.lngLat.lng, event.lngLat.lat);
+                }}
+                mapStyle={MAP_STYLE_URL}
                 style={{ width: "100%", height: "100%" }}
                 attributionControl
               >
@@ -478,6 +689,14 @@ function MapPage() {
                   <Marker longitude={userCoords[0]} latitude={userCoords[1]} anchor="center">
                     <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-emerald-500 shadow-md">
                       <LocateFixed className="h-2.5 w-2.5 text-white" />
+                    </div>
+                  </Marker>
+                )}
+
+                {manualLocation && (
+                  <Marker longitude={manualLocation.coords[0]} latitude={manualLocation.coords[1]} anchor="center">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-sky-600 shadow-md">
+                      <MapPin className="h-2.5 w-2.5 text-white" />
                     </div>
                   </Marker>
                 )}
@@ -530,21 +749,27 @@ function MapPage() {
                           {getCategoryBadge(selectedListing.category)}
                         </span>
                       </div>
-                        <p className="mt-2 text-xs text-slate-600">{selectedListing.location ?? "Flexible pickup location"}</p>
-                        <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
-                          <span>{formatMoney(selectedListing.cost_per_person ?? selectedListing.total_cost)}</span>
-                          <span>
-                            {selectedListing.capacity ? `${selectedListing.capacity} slots` : "Open"}
-                          </span>
-                        </div>
-                        <div className="mt-3 flex items-center gap-2">
-                          <Link to="/listings/$id" params={{ id: selectedListing.id }} className="inline-flex flex-1 items-center justify-center rounded-full bg-sky-600 px-3 py-2 text-xs font-semibold text-white">
-                            View share
-                          </Link>
-                          <button type="button" onClick={() => setSelectedId(null)} className="rounded-full border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600">
-                            Close
-                          </button>
-                        </div>
+                      <p className="mt-2 text-xs text-slate-600">{selectedListing.location ?? "Flexible pickup location"}</p>
+                      <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                        <span>{formatMoney(selectedListing.cost_per_person ?? selectedListing.total_cost)}</span>
+                        <span>{selectedListing.capacity ? `${selectedListing.capacity} slots` : "Open"}</span>
+                      </div>
+                      <div className="mt-3 flex items-center gap-2">
+                        <Link
+                          to="/listings/$id"
+                          params={{ id: selectedListing.id }}
+                          className="inline-flex flex-1 items-center justify-center rounded-full bg-sky-600 px-3 py-2 text-xs font-semibold text-white"
+                        >
+                          View share
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedId(null)}
+                          className="rounded-full border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600"
+                        >
+                          Close
+                        </button>
+                      </div>
                     </div>
                   </Popup>
                 )}

@@ -27,6 +27,7 @@ import { Route as AuthenticatedMyRouteImport } from './routes/_authenticated/my'
 import { Route as AuthenticatedNewRouteImport } from './routes/_authenticated/new'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedVerifyRouteImport } from './routes/_authenticated/verify'
+import { Route as ApiGeocodeRouteImport } from './routes/api/geocode'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as ListingsIdRouteImport } from './routes/listings.$id'
 import { Route as AuthenticatedCommunitiesIdRouteImport } from './routes/_authenticated/communities.$id'
@@ -121,6 +122,11 @@ const AuthenticatedVerifyRoute = AuthenticatedVerifyRouteImport.update({
   path: '/verify',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiGeocodeRoute = ApiGeocodeRouteImport.update({
+  id: '/api/geocode',
+  path: '/api/geocode',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CategorySlugRoute = CategorySlugRouteImport.update({
   id: '/category/$slug',
   path: '/category/$slug',
@@ -161,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/new': typeof AuthenticatedNewRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/verify': typeof AuthenticatedVerifyRoute
+  '/api/geocode': typeof ApiGeocodeRoute
   '/category/$slug': typeof CategorySlugRoute
   '/listings/$id': typeof ListingsIdRoute
   '/communities/$id': typeof AuthenticatedCommunitiesIdRoute
@@ -184,6 +191,7 @@ export interface FileRoutesByTo {
   '/new': typeof AuthenticatedNewRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/verify': typeof AuthenticatedVerifyRoute
+  '/api/geocode': typeof ApiGeocodeRoute
   '/category/$slug': typeof CategorySlugRoute
   '/listings/$id': typeof ListingsIdRoute
   '/communities/$id': typeof AuthenticatedCommunitiesIdRoute
@@ -209,6 +217,7 @@ export interface FileRoutesById {
   '/_authenticated/new': typeof AuthenticatedNewRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/verify': typeof AuthenticatedVerifyRoute
+  '/api/geocode': typeof ApiGeocodeRoute
   '/category/$slug': typeof CategorySlugRoute
   '/listings/$id': typeof ListingsIdRoute
   '/_authenticated/communities/$id': typeof AuthenticatedCommunitiesIdRoute
@@ -234,6 +243,7 @@ export interface FileRouteTypes {
     | '/new'
     | '/profile'
     | '/verify'
+    | '/api/geocode'
     | '/category/$slug'
     | '/listings/$id'
     | '/communities/$id'
@@ -257,6 +267,7 @@ export interface FileRouteTypes {
     | '/new'
     | '/profile'
     | '/verify'
+    | '/api/geocode'
     | '/category/$slug'
     | '/listings/$id'
     | '/communities/$id'
@@ -281,6 +292,7 @@ export interface FileRouteTypes {
     | '/_authenticated/new'
     | '/_authenticated/profile'
     | '/_authenticated/verify'
+    | '/api/geocode'
     | '/category/$slug'
     | '/listings/$id'
     | '/_authenticated/communities/$id'
@@ -300,6 +312,7 @@ export interface RootRouteChildren {
   PlannerRoute: typeof PlannerRoute
   PulseRoute: typeof PulseRoute
   ShareControlRoute: typeof ShareControlRoute
+  ApiGeocodeRoute: typeof ApiGeocodeRoute
   CategorySlugRoute: typeof CategorySlugRoute
   ListingsIdRoute: typeof ListingsIdRoute
 }
@@ -432,6 +445,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVerifyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/geocode': {
+      id: '/api/geocode'
+      path: '/api/geocode'
+      fullPath: '/api/geocode'
+      preLoaderRoute: typeof ApiGeocodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/category/$slug': {
       id: '/category/$slug'
       path: '/category/$slug'
@@ -512,6 +532,7 @@ const rootRouteChildren: RootRouteChildren = {
   PlannerRoute: PlannerRoute,
   PulseRoute: PulseRoute,
   ShareControlRoute: ShareControlRoute,
+  ApiGeocodeRoute: ApiGeocodeRoute,
   CategorySlugRoute: CategorySlugRoute,
   ListingsIdRoute: ListingsIdRoute,
 }
