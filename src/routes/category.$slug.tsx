@@ -13,8 +13,8 @@ export const Route = createFileRoute("/category/$slug")({
     const cat = CATEGORY_BY_SLUG[params.slug];
     return {
       meta: [
-        { title: `${cat?.label ?? "Category"} sharing — ShareX` },
-        { name: "description", content: cat?.tagline ?? "ShareX category" },
+        { title: `${cat?.label ?? "Category"} sharing — ShareCheya` },
+        { name: "description", content: cat?.tagline ?? "ShareCheya category" },
       ],
     };
   },

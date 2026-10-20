@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 type ListingRow = Database["public"]["Tables"]["listings"]["Row"];
 
 export const Route = createFileRoute("/_authenticated/my")({
-  head: () => ({ meta: [{ title: "My shares — ShareX" }] }),
+  head: () => ({ meta: [{ title: "My shares — ShareCheya" }] }),
   component: MyShares,
 });
 

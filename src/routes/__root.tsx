@@ -10,6 +10,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { BottomNav } from "@/components/bottom-nav";
+import sharecheyaLogo from "@/assets/sharecheya-3d.png.asset.json";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -72,38 +73,36 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "ShareX — Share Anything. Save Everything." },
+      { name: "theme-color", content: "#0f9bd6" },
+      { title: "ShareCheya — Share Anything. Save Everything." },
       {
         name: "description",
         content:
           "The community super app for splitting costs across rides, stays, food, software, travel, equipment and more.",
       },
-      { property: "og:title", content: "ShareX — Share Anything. Save Everything." },
+      { property: "og:title", content: "ShareCheya — Share Anything. Save Everything." },
       {
         property: "og:description",
         content:
           "The community super app for splitting costs across rides, stays, food, software, travel, equipment and more.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: sharecheyaLogo.url },
+      { property: "og:image:alt", content: "ShareCheya official logo" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "ShareX — Share Anything. Save Everything." },
+      { name: "twitter:title", content: "ShareCheya — Share Anything. Save Everything." },
       {
         name: "twitter:description",
         content:
           "The community super app for splitting costs across rides, stays, food, software, travel, equipment and more.",
       },
-      {
-        property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/66267cbd-7aef-4f08-a910-8d2b1ef0f0dc/id-preview-31de4bd1--1aa97dae-8217-47fd-96c0-06ddcab54c37.lovable.app-1782371038390.png",
-      },
-      {
-        name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/66267cbd-7aef-4f08-a910-8d2b1ef0f0dc/id-preview-31de4bd1--1aa97dae-8217-47fd-96c0-06ddcab54c37.lovable.app-1782371038390.png",
-      },
+      { name: "twitter:image", content: sharecheyaLogo.url },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", href: sharecheyaLogo.url, type: "image/png" },
+      { rel: "apple-touch-icon", href: sharecheyaLogo.url },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,

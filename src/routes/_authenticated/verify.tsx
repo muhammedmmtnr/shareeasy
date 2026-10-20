@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/verify")({
-  head: () => ({ meta: [{ title: "Verify your account — ShareX" }] }),
+  head: () => ({ meta: [{ title: "Verify your account — ShareCheya" }] }),
   component: VerifyPage,
 });
 

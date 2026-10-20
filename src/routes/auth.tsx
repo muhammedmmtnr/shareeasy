@@ -1,9 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import sharecheyaLogo from "@/assets/sharecheya-3d.png.asset.json";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +11,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Sign in — ShareX" }] }),
+  head: () => ({ meta: [{ title: "Sign in — ShareCheya" }] }),
   component: AuthPage,
 });
 
@@ -70,10 +70,11 @@ function AuthPage() {
       <div className="absolute inset-0 bg-[image:var(--gradient-hero)] opacity-10" />
       <div className="relative w-full max-w-md">
         <Link to="/" className="flex items-center gap-2 justify-center mb-8">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[image:var(--gradient-hero)]">
-            <Sparkles className="h-5 w-5 text-white" />
-          </div>
-          <span className="text-xl font-bold">ShareX</span>
+          <img
+            src={sharecheyaLogo.url}
+            alt="ShareCheya"
+            className="h-10 w-auto drop-shadow-[0_12px_30px_rgba(14,116,144,0.16)]"
+          />
         </Link>
 
         <div className="rounded-2xl border border-border/60 bg-card p-8 shadow-[var(--shadow-card)]">

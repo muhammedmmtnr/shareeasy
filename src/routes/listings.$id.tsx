@@ -97,7 +97,7 @@ function ListingDetail() {
   const handleShare = async () => {
     const shareData = {
       title: listing.title,
-      text: `Check out this share on ShareX: ${listing.title}`,
+      text: `Check out this share on ShareCheya: ${listing.title}`,
       url: window.location.href,
     };
     try {

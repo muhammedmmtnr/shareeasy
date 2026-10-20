@@ -39,7 +39,7 @@ import { useAuth } from "@/hooks/use-auth";
 export const Route = createFileRoute("/communities")({
   head: () => ({
     meta: [
-      { title: "Communities — ShareX" },
+      { title: "Communities — ShareCheya" },
       {
         name: "description",
         content:

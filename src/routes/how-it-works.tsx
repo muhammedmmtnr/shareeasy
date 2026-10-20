@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/how-it-works")({
   head: () => ({
     meta: [
-      { title: "How ShareX works — Share Anything. Save Everything." },
+      { title: "How ShareCheya works — Share Anything. Save Everything." },
       {
         name: "description",
-        content: "Three simple steps to start saving money with your community on ShareX.",
+        content: "Three simple steps to start saving money with your community on ShareCheya.",
       },
     ],
   }),

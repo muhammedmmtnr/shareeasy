@@ -19,7 +19,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { parseAskIntent } from "@/lib/share-utils";
 
 export const Route = createFileRoute("/_authenticated/new")({
-  head: () => ({ meta: [{ title: "Post a share — ShareX" }] }),
+  head: () => ({ meta: [{ title: "Post a share — ShareCheya" }] }),
   component: NewListing,
 });
 

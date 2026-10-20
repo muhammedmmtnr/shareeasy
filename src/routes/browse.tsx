@@ -14,7 +14,7 @@ type ListingRow = Database["public"]["Tables"]["listings"]["Row"];
 export const Route = createFileRoute("/browse")({
   head: () => ({
     meta: [
-      { title: "Browse shares — ShareX" },
+      { title: "Browse shares — ShareCheya" },
       {
         name: "description",
         content:

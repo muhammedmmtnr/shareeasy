@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import Map, { GeolocateControl, Marker, NavigationControl, Popup } from "react-map-gl/maplibre";
+import MapView, { GeolocateControl, Marker, NavigationControl, Popup } from "react-map-gl/maplibre";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import {
@@ -670,7 +670,7 @@ function MapPage() {
 
           <main className="min-h-[760px] overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.05)]">
             <div className="relative h-[760px] w-full">
-              <Map
+              <MapView
                 mapLib={maplibregl}
                 initialViewState={viewState}
                 viewState={viewState}
@@ -773,7 +773,7 @@ function MapPage() {
                     </div>
                   </Popup>
                 )}
-              </Map>
+              </MapView>
             </div>
           </main>
 

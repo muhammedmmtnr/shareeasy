@@ -67,7 +67,7 @@ export function ReportDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Report</DialogTitle>
-          <DialogDescription>Help us keep ShareX safe. Reports are confidential.</DialogDescription>
+          <DialogDescription>Help us keep ShareCheya safe. Reports are confidential.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div>

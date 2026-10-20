@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/messages")({
-  head: () => ({ meta: [{ title: "Messages — ShareX" }] }),
+  head: () => ({ meta: [{ title: "Messages — ShareCheya" }] }),
   component: MessagesLayout,
 });
 
