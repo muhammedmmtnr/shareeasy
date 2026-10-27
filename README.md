@@ -567,3 +567,25 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+### Interactive map
+
+The `/map` page uses MapLibre GL JS with the OpenFreeMap Liberty style as a fallback, Photon for place search, and OSRM for road directions. No map or geocoding API key is required for the default public services. Their availability and usage limits are controlled by their operators; use a hosted provider or a self-managed service for production traffic.
+
+On Windows PowerShell, create the local environment file if it does not exist:
+
+```powershell
+if (-not (Test-Path .env.local)) { Copy-Item .env.example .env.local }
+```
+
+Then set or override these values in `.env.local`:
+
+```dotenv
+VITE_MAP_STYLE_URL=https://tiles.openfreemap.org/styles/liberty
+VITE_GEOCODING_PROVIDER=photon
+VITE_ROUTING_PROVIDER=osrm
+# Optional server-side OSRM-compatible endpoint:
+# OSRM_API_URL=https://your-private-osrm.example.com
+```
+
+Supported geocoding value: `photon`. Supported routing values: `osrm` or `none` (directions are disabled). `VITE_MAP_STYLE_URL` is a public style URL; any provider token embedded in it is visible to browsers and must be a public/restricted key. `OSRM_API_URL` is server-side only. Configure `VITE_*` variables in the Vercel project's relevant build environments and redeploy after changes. The default public OSRM endpoint is a demo service without a production SLA.

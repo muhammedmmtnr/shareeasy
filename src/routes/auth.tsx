@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import sharecheyaLogo from "@/assets/sharecheya-3d.png.asset.json";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,9 +70,9 @@ function AuthPage() {
       <div className="relative w-full max-w-md">
         <Link to="/" className="flex items-center gap-2 justify-center mb-8">
           <img
-            src={sharecheyaLogo.url}
+            src="/shareeasy-official-logo.jpg"
             alt="ShareCheya"
-            className="h-10 w-auto drop-shadow-[0_12px_30px_rgba(14,116,144,0.16)]"
+            className="h-20 w-auto object-contain drop-shadow-[0_12px_30px_rgba(14,116,144,0.16)]"
           />
         </Link>
 

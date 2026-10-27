@@ -10,10 +10,11 @@ import {
 import { useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { BottomNav } from "@/components/bottom-nav";
-import sharecheyaLogo from "@/assets/sharecheya-3d.png.asset.json";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+
+const sharecheyaLogo = "/shareeasy-official-logo.jpg";
 
 function NotFoundComponent() {
   return (
@@ -35,7 +36,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
@@ -87,7 +88,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "The community super app for splitting costs across rides, stays, food, software, travel, equipment and more.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:image", content: sharecheyaLogo.url },
+      { property: "og:image", content: sharecheyaLogo },
       { property: "og:image:alt", content: "ShareCheya official logo" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "ShareCheya — Share Anything. Save Everything." },
@@ -96,12 +97,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "The community super app for splitting costs across rides, stays, food, software, travel, equipment and more.",
       },
-      { name: "twitter:image", content: sharecheyaLogo.url },
+      { name: "twitter:image", content: sharecheyaLogo },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: sharecheyaLogo.url, type: "image/png" },
-      { rel: "apple-touch-icon", href: sharecheyaLogo.url },
+      { rel: "icon", href: sharecheyaLogo, type: "image/svg+xml" },
+      { rel: "apple-touch-icon", href: sharecheyaLogo },
     ],
   }),
   shellComponent: RootShell,

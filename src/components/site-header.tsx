@@ -1,6 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Plus, LogOut, User as UserIcon, MessageCircle, ShieldCheck, Bell } from "lucide-react";
-import sharecheyaLogo from "@/assets/sharecheya-3d.png.asset.json";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -25,9 +24,9 @@ export function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <Link to="/" className="flex items-center gap-2 group">
           <img
-            src={sharecheyaLogo.url}
+            src="/shareeasy-official-logo.jpg"
             alt="ShareCheya"
-            className="h-12 sm:h-14 w-auto group-hover:scale-105 transition-transform drop-shadow-[0_12px_28px_rgba(14,116,144,0.18)]"
+            className="h-12 sm:h-14 w-auto object-contain group-hover:scale-105 transition-transform drop-shadow-[0_12px_28px_rgba(14,116,144,0.18)]"
           />
           <span className="sr-only">ShareCheya — Share Anything. Save Everything.</span>
         </Link>
